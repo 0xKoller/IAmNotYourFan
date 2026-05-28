@@ -1,12 +1,14 @@
 {
-  "name": "iamnotyourfan",
+  "name": "Iamnotyourfan",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "build:console": "tsc -b && vite build --mode console",
+    "preview": "vite preview",
+    "dev:landing": "vite --mode landing"
   },
   "dependencies": {
     "preact": "^10.29.1"

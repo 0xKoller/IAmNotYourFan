@@ -1,0 +1,68 @@
+/* ============================================
+   Iamnotyourfan — Design System
+   Ported & adapted from InstagramUnfollowers premium Apple-style dark UI
+   ============================================ */
+
+:root {
+  /* Core surfaces (warm dark) */
+  --surface: #151515;
+  --surface-raised: #1e1d1a;
+  --surface-soft: #25231f;
+
+  /* Text */
+  --text: #f7f1e8;           /* warm off-white */
+  --muted: #ada79d;
+
+  /* Borders & lines */
+  --line: rgba(247, 241, 232, 0.14);
+
+  /* Brand accents (iOS/Apple inspired) */
+  --amber: #e0a33a;          /* Primary CTA, strong text */
+  --cyan: #62d6d0;           /* Secondary, verified, icons */
+  --rose: #ef6a62;           /* Danger / destructive actions */
+  --green: #8ccf7e;          /* Success */
+
+  /* Glassmorphism */
+  --glass: rgba(18, 17, 15, 0.82);
+  --glass-strong: rgba(18, 17, 15, 0.92);
+
+  /* Typography */
+  --font-sans: "Avenir Next", "Trebuchet MS", system-ui, -apple-system, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+
+  /* Spacing scale */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* Radii */
+  --radius-sm: 7px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Shadows & glows */
+  --shadow-1: 0 18px 45px rgba(0, 0, 0, 0.24);
+  --shadow-2: 0 30px 80px rgba(0, 0, 0, 0.34);
+  --glow-amber: 0 0 16px rgba(224, 163, 58, 0.5);
+  --glow-cyan: 0 0 22px rgba(98, 214, 208, 0.8);
+}
+
+/* Namespace for full isolation when injected */
+.iamnotyourfan {
+  /* Make sure all children inherit the system */
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  color: var(--text);
+}
+
+/* Premium serif headings (used in hero, titles, alphabet chars) */
+.iamnotyourfan h1,
+.iamnotyourfan .serif,
+.iamnotyourfan .logo-text {
+  font-family: var(--font-serif);
+  font-weight: 700;
+}

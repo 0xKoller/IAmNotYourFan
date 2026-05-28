@@ -1,0 +1,95 @@
+/* Iamnotyourfan — Main Styles
+   Full premium glassmorphism + Apple design system
+   Namespaced under .iamnotyourfan for safe injection
+*/
+
+@use 'variables' as *;
+
+.iamnotyourfan {
+  /* Global reset inside our namespace */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  /* Base background when we take over the page */
+  background: linear-gradient(135deg, #10100f 0%, #191714 52%, #111 100%);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* Glassmorphism surfaces */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line);
+}
+
+.glass-strong {
+  background: var(--glass-strong);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+}
+
+/* Buttons */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--amber);
+  color: #1c0d0b;
+  font-weight: 700;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glow-amber);
+}
+
+.btn-danger {
+  background: var(--rose);
+  color: white;
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.btn-secondary:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* Cards / Result items (will be heavily expanded later) */
+.result-card {
+  background: rgba(255,255,255,0.045);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.result-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--cyan);
+}
+
+/* Typography helpers */
+.text-muted {
+  color: var(--muted);
+}
+
+.serif {
+  font-family: var(--font-serif);
+}
