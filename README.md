@@ -1,65 +1,111 @@
-# IAmNotYourFan
+<div align="center">
 
-Find accounts you follow on X that don't follow you back — with a beautiful full UI experience.
+# 🖤 IAmNotYourFan
 
-## Quick Start (Real Profile)
+### Find the accounts you follow on X that don't follow you back — in a beautiful, full-screen UI.
 
-This is currently the easiest and most reliable way to use it on your actual X account:
+[![License: MIT](https://img.shields.io/badge/License-MIT-e0a33a.svg?style=flat-square)](#-license)
+[![Preact](https://img.shields.io/badge/Preact-10-673AB8?style=flat-square&logo=preact&logoColor=white)](https://preactjs.com/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![No tracking](https://img.shields.io/badge/Data-100%25%20local-62d6d0?style=flat-square)](#-privacy)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-8ccf7e?style=flat-square)](#-contributing)
 
-1. Clone or download this repo.
+<sub>Paste one script into your browser console — get a polished dashboard of who's <strong>not</strong> a bestie.</sub>
 
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
+</div>
 
-3. Build the console script:
-   ```bash
-   pnpm build:console && pnpm make:console-bundle
-   ```
+---
 
-4. Go to your real following page:
+## ✨ What it does
+
+`IAmNotYourFan` scrolls through your X **Following** list, figures out who follows you back, and drops you into a clean, glassy dashboard.
+
+| | |
+|---|---|
+| 🪞 **You are a fan** | Accounts you follow that *don't* follow you back |
+| 💞 **Besties** | Mutuals — you follow each other |
+| 📊 **Live stats** | Following total, fans, and besties at a glance |
+| 🔎 **Search & filter** | Instantly narrow by handle/name, toggle All / You are a fan / Besties |
+| 🖱️ **Clickable cards** | Jump straight to any profile in a new tab |
+| 🔒 **Local only** | Runs entirely in your browser — nothing is uploaded |
+
+---
+
+## 🚀 Quick Start (your real profile)
+
+The most reliable way to run it on your actual X account:
+
+```bash
+# 1. Install
+pnpm install
+
+# 2. Build the single pasteable console script
+pnpm build:console && pnpm make:console-bundle
+```
+
+3. Open your following page:
    ```
    https://x.com/YOURUSERNAME/following
    ```
-
-5. Open DevTools → Console and paste the entire contents of:
+4. Open **DevTools → Console**, then paste the entire contents of:
    ```
    dist/iamnotyourfan-full-console.js
    ```
 
-### What happens
+### What happens next
 
-- A clean loader appears with a live counter.
-- The script scrolls your **original** X following page in the background (this allows it to collect hundreds of users reliably).
-- When it reaches the end (or you click Stop), it does a full clean takeover and opens the beautiful IAmNotYourFan interface with all your real data.
+1. 🌀 A loader appears with a **live counter**.
+2. 📜 The script scrolls your original Following page in the background to reliably collect *hundreds* of accounts.
+3. 🎬 When it finishes, it does a clean full-page takeover and opens the **IAmNotYourFan** dashboard with all your real data.
 
-You can then use filters, ignore list, exports, etc. in the polished UI.
+> ✅ Tested on real accounts with **950+** following.
 
-## Development
+---
+
+## 🛠️ Development
 
 ```bash
-pnpm dev
+pnpm dev          # full UI in preview mode (fake data) → http://localhost:5173
+pnpm dev:landing  # landing page in dev mode
 ```
 
-Open http://localhost:5173 to see the full UI in preview mode (with fake data).
+## 📦 Build scripts
 
-## Building
+| Command | What it does |
+|---|---|
+| `pnpm build` | Standard production build |
+| `pnpm build:console` | Builds the IIFE bundle for console use |
+| `pnpm make:console-bundle` | Combines JS + CSS into one pasteable file → `dist/iamnotyourfan-full-console.js` |
+| `pnpm preview` | Preview the production build |
 
-- `pnpm build` — normal production build
-- `pnpm build:console` — builds the IIFE for console use
-- `pnpm make:console-bundle` — combines JS + CSS into a single easy-to-paste file (`dist/iamnotyourfan-full-console.js`)
+---
 
-## Current Status
+## 🧱 Tech stack
 
-This version works very well for real profiles with large following lists (tested with 950+).
+- ⚛️ **Preact** — tiny, fast React-compatible UI
+- ⚡ **Vite** — dev server & build tooling
+- 🟦 **TypeScript** — typed end to end
+- 🎨 **Sass** — styling
 
-The full "copy-paste one script and get the complete experience" flow is now functional.
+---
 
-## Credits / Inspiration
+## 🔐 Privacy
 
-Heavily inspired by the excellent [InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers) tool by David Arroyo.
+Everything runs locally in your browser. No servers, no accounts, no analytics — your following list never leaves your machine.
 
-## License
+---
 
-MIT
+## 🤝 Contributing
+
+Issues and PRs are welcome. X changes its DOM often, so selector fixes in `src/utils/x-selectors.ts` are especially appreciated.
+
+---
+
+## 🙏 Credits
+
+Heavily inspired by the excellent [InstagramUnfollowers](https://github.com/davidarroyo1234/InstagramUnfollowers) by David Arroyo.
+
+## 📄 License
+
+[MIT](LICENSE) © [0xKoller](https://github.com/0xKoller)
