@@ -163,6 +163,8 @@
     <footer>
       Inspired by <a href="https://github.com/davidarroyo1234/InstagramUnfollowers" target="_blank" rel="noopener">InstagramUnfollowers</a>.
       &nbsp;•&nbsp; MIT &copy; <a href="https://x.com/0xKoller" target="_blank" rel="noopener">0xKoller</a>
+      <br><br>
+      <span style="font-size:0.78rem; opacity:0.7;">This page uses cookieless analytics (no personal data) to count visits and copies. The console script itself sends nothing — your X data never leaves your browser.</span>
     </footer>
   </div>
 
@@ -199,6 +201,8 @@
         const text = await loadScript();
         await navigator.clipboard.writeText(text);
         const kb = Math.round(text.length / 1024);
+        // Cookieless usage event (GoatCounter) — counts copies, no PII.
+        window.goatcounter?.count?.({ path: 'copy-script', title: 'Copy console script', event: true });
         flash('copied', `✅ Copied! (${kb} KB)`, 'Now paste it into the console on x.com/yourname/following');
       } catch (err) {
         flash('error', '⚠️ Script not built',
@@ -206,10 +210,23 @@
       }
     });
 
+    // Count downloads too (anchor with id="downloadBtn").
+    document.getElementById('downloadBtn')?.addEventListener('click', () => {
+      window.goatcounter?.count?.({ path: 'download-script', title: 'Download .js', event: true });
+    });
+
     // Pre-warm so the first click is instant (and reveal if it isn't built yet)
     loadScript().catch(() => {
       note.textContent = 'Tip: build the bundle first with pnpm build:console && pnpm make:console-bundle';
     });
   </script>
+
+  <!--
+    Cookieless, privacy-friendly analytics (page views + Copy/Download events).
+    Create a free site at https://www.goatcounter.com/ and replace the code below
+    (the "iamnotyourfan" part) with your own GoatCounter site code.
+  -->
+  <script data-goatcounter="https://iamnotyourfan.goatcounter.com/count"
+          async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
