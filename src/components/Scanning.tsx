@@ -23,7 +23,7 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
   }
 
   // Apply "Only you are a fan" checkbox when in All tab
-  if (filterType === 'all' && state.filter.showNonReciprocal) {
+  if (filterType === 'all' && state.filter.onlyNonReciprocal) {
     baseList = baseList.filter(u => !u.isMutual);
   }
 
@@ -115,9 +115,9 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
             <input
               type="checkbox"
               disabled={filterType !== 'all'}
-              checked={state.filter.showNonReciprocal}
+              checked={state.filter.onlyNonReciprocal}
               onChange={(e) => onUpdateState({
-                filter: { ...state.filter, showNonReciprocal: (e.target as HTMLInputElement).checked }
+                filter: { ...state.filter, onlyNonReciprocal: (e.target as HTMLInputElement).checked }
               })}
             />
             <span style={{ fontSize: '0.9rem' }}>Only "you are a fan"</span>
