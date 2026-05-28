@@ -33,33 +33,43 @@ if (isConsoleMode) {
       color: #f7f1e8; font-family: system-ui, -apple-system, sans-serif;
     `;
     loader.innerHTML = `
-      <div style="text-align: center; max-width: 420px; padding: 2rem;">
-        <div style="font-family: Georgia, serif; font-size: 2.8rem; color: #e0a33a; margin-bottom: 0.5rem;">
+      <div style="text-align: center; max-width: 460px; padding: 2.5rem 2rem; background: rgba(30,29,26,0.95); border-radius: 16px; border: 1px solid rgba(247,241,232,0.1);">
+        <div style="font-family: Georgia, serif; font-size: 2.6rem; color: #e0a33a; margin-bottom: 0.25rem;">
           Iamnotyourfan
         </div>
-        <div style="font-size: 1.1rem; margin-bottom: 1.5rem; opacity: 0.85;">
-          Scanning your following list...
+        <div style="font-size: 1rem; margin-bottom: 1.25rem; opacity: 0.75;">
+          Collecting your real following list
         </div>
         
         <div id="iamnotyourfan-count" style="
-          font-size: 3.2rem; font-weight: 700; color: #e0a33a; margin-bottom: 0.25rem;
+          font-size: 3.8rem; font-weight: 700; color: #e0a33a; line-height: 1; margin-bottom: 0.1rem;
         ">0</div>
-        <div style="font-size: 0.95rem; opacity: 0.7; margin-bottom: 2rem;">profiles collected</div>
+        <div style="font-size: 0.9rem; opacity: 0.65; margin-bottom: 1.25rem;">profiles collected</div>
 
-        <div style="display: flex; gap: 12px; justify-content: center;">
+        <!-- Progress Bar -->
+        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 999px; margin-bottom: 1.5rem; overflow: hidden;">
+          <div id="iamnotyourfan-progress" style="
+            width: 0%; height: 100%; 
+            background: linear-gradient(to right, #e0a33a, #62d6d0);
+            transition: width 0.3s ease;
+            border-radius: 999px;
+          "></div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
           <button id="iamnotyourfan-pause" style="
-            background: #f7931a; color: white; border: none; padding: 10px 20px;
-            border-radius: 8px; font-size: 0.95rem; cursor: pointer;
+            background: #f7931a; color: white; border: none; padding: 9px 18px;
+            border-radius: 8px; font-size: 0.9rem; cursor: pointer; font-weight: 500;
           ">Pause</button>
           
           <button id="iamnotyourfan-stop" style="
-            background: #e0245e; color: white; border: none; padding: 10px 20px;
-            border-radius: 8px; font-size: 0.95rem; cursor: pointer; font-weight: 600;
+            background: #e0245e; color: white; border: none; padding: 9px 18px;
+            border-radius: 8px; font-size: 0.9rem; cursor: pointer; font-weight: 600;
           ">Stop & View Results</button>
         </div>
         
-        <div style="margin-top: 1.5rem; font-size: 0.8rem; opacity: 0.6;">
-          We are scrolling your original following page in the background.
+        <div style="margin-top: 1.25rem; font-size: 0.75rem; opacity: 0.55;">
+          Scrolling your original following page in the background
         </div>
       </div>
     `;
@@ -75,6 +85,13 @@ if (isConsoleMode) {
 
     const updateCounter = () => {
       if (countEl) countEl.textContent = collected.size.toString();
+
+      // Visual progress bar (fills gradually as we collect more)
+      const progressBar = loader.querySelector('#iamnotyourfan-progress') as HTMLElement;
+      if (progressBar) {
+        const pct = Math.min(100, Math.floor((collected.size / 800) * 100));
+        progressBar.style.width = `${pct}%`;
+      }
     };
 
     // Start aggressive collection on the real X page

@@ -16,6 +16,9 @@ type Tab = 'non_ignored' | 'ignored';
 export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: ScanningProps) {
   const [activeTab, setActiveTab] = useState<Tab>('non_ignored');
   const [searchTerm, setSearchTerm] = useState(state.searchTerm || '');
+  const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('non-reciprocal');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   // Load persistent ignore list on mount
   useEffect(() => {
@@ -34,9 +37,16 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
     state.ignoreList.some(u => u.username === user.username);
 
   // Main list depending on tab
-  const baseList = activeTab === 'non_ignored'
+  let baseList = activeTab === 'non_ignored'
     ? state.users.filter(u => !isIgnored(u))
     : state.ignoreList;
+
+  // Apply new filter type
+  if (filterType === 'non-reciprocal') {
+    baseList = baseList.filter(u => !u.isMutual);
+  } else if (filterType === 'mutuals') {
+    baseList = baseList.filter(u => u.isMutual);
+  }
 
   const filtered = baseList.filter(u => {
     const q = searchTerm.toLowerCase();
@@ -46,6 +56,11 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
       (u.displayName || '').toLowerCase().includes(q)
     );
   });
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const nonReciprocalTotal = state.users.filter(u => !u.isMutual).length;
   const ignoredCount = state.ignoreList.length;
@@ -251,13 +266,33 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
             }}
           />
 
+          {/* Filters */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            {(['all', 'non-reciprocal', 'mutuals'] as const).map(type => (
+              <button
+                key={type}
+                onClick={() => { setFilterType(type); setCurrentPage(1); }}
+                class="btn"
+                style={{
+                  padding: '6px 14px',
+                  fontSize: '0.85rem',
+                  background: filterType === type ? 'var(--amber)' : 'rgba(255,255,255,0.06)',
+                  color: filterType === type ? '#1c0d0b' : 'var(--text)',
+                  border: '1px solid var(--line)'
+                }}
+              >
+                {type === 'all' ? 'All' : type === 'non-reciprocal' ? 'Non-reciprocal' : 'Mutuals'}
+              </button>
+            ))}
+          </div>
+
           {/* User Cards Grid */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
             gap: '0.65rem',
           }}>
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <div style={{ color: 'var(--muted)', padding: '2rem 0' }}>
                 No users in this view.
                 <br /><br />
@@ -273,18 +308,22 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
               </div>
             )}
 
-            {filtered.map(user => {
+            {paginated.map(user => {
               const ignored = isIgnored(user);
+              const openProfile = () => window.open(user.profileUrl, '_blank');
+
               return (
                 <div
                   key={user.username}
                   class="result-card glass"
+                  onClick={openProfile}
                   style={{
                     opacity: ignored && activeTab === 'non_ignored' ? 0.6 : 1,
+                    cursor: 'pointer',
                   }}
                 >
                   <div
-                    onClick={() => handleToggleIgnore(user)}
+                    onClick={(e) => { e.stopPropagation(); handleToggleIgnore(user); }}
                     style={{ cursor: 'pointer' }}
                   >
                     {user.avatarUrl ? (
@@ -320,6 +359,31 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
               );
             })}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '1.5rem' }}>
+              <button 
+                onClick={() => setCurrentPage(Math.max(1, safePage - 1))} 
+                disabled={safePage === 1}
+                class="btn btn-secondary"
+                style={{ padding: '6px 14px', fontSize: '0.85rem' }}
+              >
+                ← Prev
+              </button>
+              <span style={{ padding: '6px 12px', fontSize: '0.9rem', opacity: 0.7 }}>
+                Page {safePage} of {totalPages}
+              </span>
+              <button 
+                onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))} 
+                disabled={safePage === totalPages}
+                class="btn btn-secondary"
+                style={{ padding: '6px 14px', fontSize: '0.85rem' }}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
