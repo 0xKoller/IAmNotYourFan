@@ -108,4 +108,4 @@ Heavily inspired by the excellent [InstagramUnfollowers](https://github.com/davi
 
 ## 📄 License
 
-[MIT](LICENSE) © [0xKoller](https://github.com/0xKoller)
+[MIT](LICENSE) © [0xKoller](https://x.com/0xKoller)
