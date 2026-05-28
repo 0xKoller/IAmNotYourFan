@@ -111,7 +111,11 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
           </div>
 
           <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>FILTERS</div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', cursor: 'pointer' }}>
+          <label style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem',
+            cursor: filterType !== 'all' ? 'not-allowed' : 'pointer',
+            opacity: filterType !== 'all' ? 0.4 : 1,
+          }}>
             <input
               type="checkbox"
               disabled={filterType !== 'all'}
@@ -120,7 +124,10 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
                 filter: { ...state.filter, onlyNonReciprocal: (e.target as HTMLInputElement).checked }
               })}
             />
-            <span style={{ fontSize: '0.9rem' }}>Only "you are a fan"</span>
+            <span style={{
+              fontSize: '0.9rem',
+              textDecoration: filterType !== 'all' ? 'line-through' : 'none',
+            }}>Only "you are a fan"</span>
           </label>
         </div>
 
