@@ -4,104 +4,212 @@
   <meta charset="UTF-8">
   <title>IAmNotYourFan — Find who doesn’t follow you back on X</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Find the accounts you follow on X that don't follow you back — in a beautiful, full-screen UI. Paste one script into your console.">
   <style>
+    :root {
+      --amber: #e0a33a;
+      --teal: #62d6d0;
+      --green: #8ccf7e;
+      --red: #ef6a62;
+      --bg: #111;
+      --text: #f7f1e8;
+      --muted: #ada79d;
+      --line: rgba(247,241,232,0.1);
+      --card: rgba(255,255,255,0.04);
+    }
+    * { box-sizing: border-box; }
     body {
-      background: #111;
-      color: #f7f1e8;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(224,163,58,0.10), transparent 60%),
+        linear-gradient(135deg, #10100f 0%, #191714 52%, #111 100%);
+      color: var(--text);
       font-family: "Avenir Next", system-ui, -apple-system, sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
       margin: 0;
-      padding: 2rem;
+      padding: 4rem 1.5rem 3rem;
+      min-height: 100vh;
+      line-height: 1.5;
     }
-    .container {
-      max-width: 720px;
-      text-align: center;
-    }
+    .wrap { max-width: 860px; margin: 0 auto; }
+
+    /* Hero */
+    .hero { text-align: center; margin-bottom: 3rem; }
     h1 {
       font-family: Georgia, serif;
-      font-size: 3.2rem;
+      font-size: clamp(2.8rem, 8vw, 4.5rem);
       margin: 0 0 0.5rem;
-      color: #e0a33a;
+      color: var(--amber);
+      letter-spacing: -1px;
     }
-    .subtitle {
-      font-size: 1.15rem;
-      color: #ada79d;
-      margin-bottom: 2rem;
+    .subtitle { font-size: clamp(1rem, 2.5vw, 1.3rem); color: var(--muted); margin: 0 auto 1.5rem; max-width: 560px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 2.25rem; }
+    .badge {
+      font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.7rem; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--card); color: var(--muted);
     }
+    .badge.amber { color: var(--amber); border-color: rgba(224,163,58,0.35); }
+    .badge.teal  { color: var(--teal);  border-color: rgba(98,214,208,0.35); }
+    .badge.green { color: var(--green); border-color: rgba(140,207,126,0.35); }
+
+    /* CTA */
+    .cta { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; align-items: center; }
     .copy-btn {
-      background: #e0a33a;
-      color: #1c0d0b;
-      border: none;
-      padding: 1rem 2.5rem;
-      font-size: 1.1rem;
-      font-weight: 700;
-      border-radius: 999px;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      background: var(--amber); color: #1c0d0b; border: none;
+      padding: 1rem 2.25rem; font-size: 1.05rem; font-weight: 700; border-radius: 999px;
+      cursor: pointer; transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
     }
-    .copy-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 16px rgba(224,163,58,0.5);
+    .copy-btn:hover { transform: translateY(-2px); box-shadow: 0 0 22px rgba(224,163,58,0.45); }
+    .copy-btn.copied { background: var(--green); }
+    .copy-btn.error  { background: var(--red); color: #fff; }
+    .ghost-btn {
+      background: var(--card); color: var(--text); border: 1px solid var(--line);
+      padding: 1rem 1.75rem; font-size: 1rem; font-weight: 600; border-radius: 999px;
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: .5rem;
+      transition: border-color .2s ease;
     }
-    .instructions {
-      margin-top: 2.5rem;
+    .ghost-btn:hover { border-color: var(--amber); }
+    .cta-note { width: 100%; text-align: center; font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; min-height: 1.2em; }
+
+    /* Sections */
+    section { margin-top: 3.25rem; }
+    h2 { font-size: 1.4rem; margin: 0 0 1.25rem; display: flex; align-items: center; gap: .5rem; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.85rem; }
+    .feature {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1.1rem 1.2rem;
+    }
+    .feature .icon { font-size: 1.4rem; }
+    .feature h3 { margin: 0.5rem 0 0.25rem; font-size: 1rem; }
+    .feature p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+
+    /* Steps */
+    ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+    ol.steps li {
+      position: relative; padding: 0.65rem 0 0.65rem 2.6rem; border-bottom: 1px solid var(--line);
       font-size: 0.95rem;
-      line-height: 1.6;
-      color: #ada79d;
+    }
+    ol.steps li:last-child { border-bottom: none; }
+    ol.steps li::before {
+      counter-increment: step; content: counter(step);
+      position: absolute; left: 0; top: 0.55rem;
+      width: 1.7rem; height: 1.7rem; border-radius: 50%;
+      background: rgba(224,163,58,0.15); color: var(--amber);
+      display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;
     }
     code {
-      background: #222;
-      padding: 2px 6px;
-      border-radius: 4px;
+      background: #000; border: 1px solid var(--line); padding: 2px 7px; border-radius: 5px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.85em; color: var(--teal);
     }
+
+    .note { background: rgba(98,214,208,0.07); border: 1px solid rgba(98,214,208,0.25); border-radius: 12px; padding: 0.9rem 1.1rem; font-size: 0.88rem; color: var(--muted); }
+    .note strong { color: var(--teal); }
+
+    footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); text-align: center; font-size: 0.85rem; color: var(--muted); }
+    footer a { color: var(--amber); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>IAmNotYourFan</h1>
-    <p class="subtitle">Find the accounts you follow that don’t follow you back on X.</p>
+  <div class="wrap">
+    <!-- Hero -->
+    <div class="hero">
+      <h1>IAmNotYourFan</h1>
+      <p class="subtitle">Find the accounts you follow on X that don’t follow you back — in a beautiful, full-screen dashboard.</p>
 
-    <button class="copy-btn" onclick="copyScript()">
-      📋 Copy console script
-    </button>
+      <div class="badges">
+        <span class="badge amber">MIT Licensed</span>
+        <span class="badge">⚛️ Preact</span>
+        <span class="badge">⚡ Vite</span>
+        <span class="badge">🟦 TypeScript</span>
+        <span class="badge teal">🔒 100% local</span>
+        <span class="badge green">No tracking</span>
+      </div>
 
-    <div class="instructions">
-      <p><strong>Current status (local dev):</strong></p>
-      <ol style="text-align: left; display: inline-block; font-size: 0.95rem;">
-        <li>Run <code>pnpm dev</code></li>
-        <li>See beautiful hero + full scanning workspace with tabs, exports, ignore list</li>
-        <li>Preview mode works great on localhost</li>
-        <li>Real X scanning (auto-scroll + collection) is functional when pasted on x.com/following</li>
-      </ol>
-      <p style="margin-top: 1.25rem; font-size: 0.85rem;">
-        Settings modal, persistent ignore list, and high-fidelity UI are already implemented.
-      </p>
-
-      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #333; text-align: left; font-size: 0.9rem;">
-        <strong>To test the full beautiful UI on your real profile:</strong><br><br>
-        1. Run: <code>pnpm build:console && pnpm make:console-bundle</code><br>
-        2. Open <code>dist/iamnotyourfan-full-console.js</code><br>
-        3. Copy the contents and paste it in the console on <code>x.com/yourname/following</code><br><br>
-        
-        The script will do a full page takeover and automatically start scanning your real following list.
+      <div class="cta">
+        <button id="copyBtn" class="copy-btn">📋 Copy console script</button>
+        <a id="downloadBtn" class="ghost-btn" href="./iamnotyourfan-full-console.js" download>⬇️ Download .js</a>
+        <a class="ghost-btn" href="https://github.com/0xKoller/IAmNotYourFan" target="_blank" rel="noopener">★ GitHub</a>
+        <div id="ctaNote" class="cta-note"></div>
       </div>
     </div>
+
+    <!-- Features -->
+    <section>
+      <h2>✨ What you get</h2>
+      <div class="grid">
+        <div class="feature"><div class="icon">🪞</div><h3>You are a fan</h3><p>Accounts you follow that don’t follow you back.</p></div>
+        <div class="feature"><div class="icon">💞</div><h3>Besties</h3><p>Mutuals — you follow each other.</p></div>
+        <div class="feature"><div class="icon">📊</div><h3>Live stats</h3><p>Following total, fans, and besties at a glance.</p></div>
+        <div class="feature"><div class="icon">🔎</div><h3>Search &amp; filter</h3><p>Narrow by handle or name; toggle All / Fans / Besties.</p></div>
+        <div class="feature"><div class="icon">🖱️</div><h3>Clickable cards</h3><p>Jump straight to any profile in a new tab.</p></div>
+        <div class="feature"><div class="icon">🔒</div><h3>Local only</h3><p>Runs entirely in your browser. Nothing is uploaded.</p></div>
+      </div>
+    </section>
+
+    <!-- How to use -->
+    <section>
+      <h2>🚀 How to use it</h2>
+      <ol class="steps">
+        <li>Click <strong>Copy console script</strong> above (or download the <code>.js</code>).</li>
+        <li>Open your following page: <code>https://x.com/YOURNAME/following</code></li>
+        <li>Open <strong>DevTools → Console</strong> (<code>⌘⌥J</code> / <code>Ctrl+Shift+J</code>).</li>
+        <li>Paste the script and hit <strong>Enter</strong>.</li>
+        <li>Watch the live counter, then explore your dashboard. 🎬</li>
+      </ol>
+      <p style="margin-top:1.25rem;" class="note">
+        <strong>How it works:</strong> the script scrolls your original Following page in the background to reliably collect hundreds of accounts, then does a clean full-page takeover and opens the IAmNotYourFan dashboard with your real data. Tested on accounts with 950+ following.
+      </p>
+    </section>
+
+    <footer>
+      Inspired by <a href="https://github.com/davidarroyo1234/InstagramUnfollowers" target="_blank" rel="noopener">InstagramUnfollowers</a>.
+      &nbsp;•&nbsp; MIT &copy; <a href="https://github.com/0xKoller" target="_blank" rel="noopener">0xKoller</a>
+    </footer>
   </div>
 
   <script>
-    function copyScript() {
-      // Placeholder — will be replaced by the real giant bundle later
-      const text = `// Iamnotyourfan console script will appear here after build:console\n// For now run: pnpm build:console`;
-      navigator.clipboard.writeText(text).then(() => {
-        const btn = event.currentTarget;
-        const original = btn.textContent;
-        btn.textContent = '✅ Copied (placeholder)';
-        setTimeout(() => btn.textContent = original, 1800);
-      });
+    const SCRIPT_URL = './iamnotyourfan-full-console.js';
+    const btn = document.getElementById('copyBtn');
+    const note = document.getElementById('ctaNote');
+    let cachedScript = null;
+
+    async function loadScript() {
+      if (cachedScript) return cachedScript;
+      const res = await fetch(SCRIPT_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('not built');
+      const text = await res.text();
+      if (!text || text.length < 500) throw new Error('empty bundle');
+      cachedScript = text;
+      return text;
     }
+
+    function flash(state, label, msg) {
+      btn.classList.remove('copied', 'error');
+      if (state) btn.classList.add(state);
+      btn.textContent = label;
+      note.textContent = msg || '';
+      setTimeout(() => {
+        btn.classList.remove('copied', 'error');
+        btn.textContent = '📋 Copy console script';
+      }, 2600);
+    }
+
+    btn.addEventListener('click', async () => {
+      btn.textContent = '… loading script';
+      try {
+        const text = await loadScript();
+        await navigator.clipboard.writeText(text);
+        const kb = Math.round(text.length / 1024);
+        flash('copied', `✅ Copied! (${kb} KB)`, 'Now paste it into the console on x.com/yourname/following');
+      } catch (err) {
+        flash('error', '⚠️ Script not built',
+          'Run: pnpm build:console && pnpm make:console-bundle — or use Download .js');
+      }
+    });
+
+    // Pre-warm so the first click is instant (and reveal if it isn't built yet)
+    loadScript().catch(() => {
+      note.textContent = 'Tip: build the bundle first with pnpm build:console && pnpm make:console-bundle';
+    });
   </script>
 </body>
 </html>
