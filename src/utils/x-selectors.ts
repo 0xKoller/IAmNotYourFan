@@ -20,19 +20,64 @@ export function isOnFollowingPage(): boolean {
 }
 
 export function getUserCells(): Element[] {
+  // Scope to the main timeline so we never pick up the right-hand
+  // "Who to follow" sidebar suggestions, which use the same UserCell markup.
+  const root =
+    document.querySelector('[data-testid="primaryColumn"]') || document;
+
   // Primary (most reliable in late 2025)
-  let cells = Array.from(document.querySelectorAll('[data-testid="UserCell"]'));
+  let cells = Array.from(root.querySelectorAll('[data-testid="UserCell"]'));
 
   if (cells.length === 0) {
     // Fallback used by many scripts
-    cells = Array.from(document.querySelectorAll('[data-testid="cellInnerDiv"]'));
+    cells = Array.from(root.querySelectorAll('[data-testid="cellInnerDiv"]'));
   }
 
-  // Filter out obvious non-profile elements (ads, etc.)
   return cells.filter(cell => {
+    // Must look like a real profile row (ads etc. have no profile link).
     const hasProfileLink = cell.querySelector('a[href^="/"][role="link"]');
-    return !!hasProfileLink;
+    if (!hasProfileLink) return false;
+
+    // Exclude anything inside a recommendation module ("Who to follow",
+    // "You might like", "Relevant people") even if it leaks into the
+    // primary column on some layouts.
+    if (isInSuggestionModule(cell)) return false;
+
+    return true;
   });
+}
+
+const SUGGESTION_LABELS = ['who to follow', 'you might like', 'relevant people'];
+
+function isInSuggestionModule(cell: Element): boolean {
+  // Right-hand column is always suggestions/trends, never the following list.
+  if (cell.closest('[data-testid="sidebarColumn"]')) return true;
+
+  // On the Following page the "Who to follow" carousel is injected inline in
+  // the primary column. It lives in a labelled <section>/[role="region"].
+  const section = cell.closest('section, aside, [role="region"]');
+  if (!section) return false;
+
+  let label = (section.getAttribute('aria-label') || '').toLowerCase();
+
+  // X labels the section via aria-labelledby -> heading element.
+  if (!label) {
+    const labelledBy = section.getAttribute('aria-labelledby');
+    if (labelledBy) {
+      label = labelledBy
+        .split(/\s+/)
+        .map(id => document.getElementById(id)?.textContent || '')
+        .join(' ')
+        .toLowerCase();
+    }
+  }
+
+  // Fallback: read the section's own heading text.
+  if (!label) {
+    label = (section.querySelector('h1, h2, [role="heading"]')?.textContent || '').toLowerCase();
+  }
+
+  return SUGGESTION_LABELS.some(l => label.includes(l));
 }
 
 /**

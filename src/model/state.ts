@@ -8,8 +8,6 @@ export type Filter = {
   showVerified: boolean;
 };
 
-export type IgnoreList = readonly XUser[];
-
 export type Timings = {
   minDelayMs: number;
   maxDelayMs: number;
@@ -20,7 +18,6 @@ export type ScanningState = {
   readonly status: 'scanning';
   readonly progress: number;           // 0-100
   readonly users: readonly XUser[];
-  readonly ignoreList: IgnoreList;
   readonly selected: readonly XUser[];
   readonly filter: Filter;
   readonly searchTerm: string;

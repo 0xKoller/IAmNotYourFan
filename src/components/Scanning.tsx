@@ -1,44 +1,21 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import type { State } from '../model/state';
 import type { XUser } from '../model/user';
-import { loadIgnoreList, saveIgnoreList, toggleUserInIgnoreList } from '../utils/ignore-list';
 
 interface ScanningProps {
   state: Extract<State, { status: 'scanning' }>;
   onUpdateState: (patch: Partial<Extract<State, { status: 'scanning' }>>) => void;
 }
 
-type Tab = 'non_ignored' | 'ignored';
-
 export function Scanning({ state, onUpdateState }: ScanningProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('non_ignored');
   const [searchTerm, setSearchTerm] = useState(state.searchTerm || '');
   const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('non-reciprocal');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 50;
 
-  // Load persistent ignore list on mount
-  useEffect(() => {
-    const saved = loadIgnoreList();
-    if (saved.length > 0 && state.ignoreList.length === 0) {
-      onUpdateState({ ignoreList: saved });
-    }
-  }, []);
+  let baseList: readonly XUser[] = state.users;
 
-  // Keep localStorage in sync
-  useEffect(() => {
-    saveIgnoreList(state.ignoreList);
-  }, [state.ignoreList]);
-
-  const isIgnored = (user: XUser) =>
-    state.ignoreList.some(u => u.username === user.username);
-
-  // Main list depending on tab
-  let baseList = activeTab === 'non_ignored'
-    ? state.users.filter(u => !isIgnored(u))
-    : state.ignoreList;
-
-  // Apply new filter type
+  // Apply filter type
   if (filterType === 'non-reciprocal') {
     baseList = baseList.filter(u => !u.isMutual);
   } else if (filterType === 'mutuals') {
@@ -66,12 +43,6 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
 
   const nonReciprocalTotal = state.users.filter(u => !u.isMutual).length;
   const mutualsTotal = state.users.filter(u => u.isMutual).length;
-  const ignoredCount = state.ignoreList.length;
-
-  const handleToggleIgnore = (user: XUser) => {
-    const newList = toggleUserInIgnoreList(state.ignoreList, user);
-    onUpdateState({ ignoreList: newList });
-  };
 
   return (
     <div class="iamnotyourfan" style={{
@@ -134,13 +105,6 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
             </div>
           </div>
 
-          <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '4px' }}>IGNORED</div>
-            <div style={{ fontSize: '2.1rem', fontWeight: 700, color: '#62d6d0', lineHeight: 1 }}>
-              {ignoredCount}
-            </div>
-          </div>
-
           <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>FILTERS</div>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', cursor: 'pointer' }}>
             <input
@@ -152,48 +116,10 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
             />
             <span style={{ fontSize: '0.9rem' }}>Only "you are a fan"</span>
           </label>
-
-          <div style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: '#666' }}>
-            Click avatars to add/remove from ignore list.
-          </div>
         </div>
 
         {/* Main content area */}
         <div style={{ padding: '1.25rem 2rem' }}>
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: '1.5rem', borderBottom: '1px solid var(--line)', marginBottom: '1rem' }}>
-            <button
-              onClick={() => setActiveTab('non_ignored')}
-              style={{
-                padding: '0.75rem 0',
-                fontWeight: activeTab === 'non_ignored' ? 700 : 400,
-                color: activeTab === 'non_ignored' ? '#e0a33a' : 'var(--muted)',
-                borderBottom: activeTab === 'non_ignored' ? '3px solid #e0a33a' : 'none',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.95rem',
-              }}
-            >
-              Non-Ignored ({state.users.filter(u => !isIgnored(u)).length})
-            </button>
-            <button
-              onClick={() => setActiveTab('ignored')}
-              style={{
-                padding: '0.75rem 0',
-                fontWeight: activeTab === 'ignored' ? 700 : 400,
-                color: activeTab === 'ignored' ? '#e0a33a' : 'var(--muted)',
-                borderBottom: activeTab === 'ignored' ? '3px solid #e0a33a' : 'none',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '0.95rem',
-              }}
-            >
-              Ignored ({ignoredCount})
-            </button>
-          </div>
-
           {/* Search */}
           <input
             type="text"
@@ -256,7 +182,6 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
             )}
 
             {paginated.map(user => {
-              const ignored = isIgnored(user);
               const openProfile = () => window.open(user.profileUrl, '_blank');
 
               return (
@@ -264,15 +189,9 @@ export function Scanning({ state, onUpdateState }: ScanningProps) {
                   key={user.username}
                   class="result-card glass"
                   onClick={openProfile}
-                  style={{
-                    opacity: ignored && activeTab === 'non_ignored' ? 0.6 : 1,
-                    cursor: 'pointer',
-                  }}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <div
-                    onClick={(e) => { e.stopPropagation(); handleToggleIgnore(user); }}
-                    style={{ cursor: 'pointer' }}
-                  >
+                  <div>
                     {user.avatarUrl ? (
                       <img src={user.avatarUrl} width="46" height="46" alt="" />
                     ) : (

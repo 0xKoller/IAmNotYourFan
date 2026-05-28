@@ -6,7 +6,6 @@ import { type State, DEFAULT_FILTER, DEFAULT_TIMINGS } from './model/state';
 import type { XUser } from './model/user';
 import { collectVisibleUsers, isOnFollowingPage } from './utils/x-selectors';
 import { autoScrollFollowingList } from './utils/auto-scroll';
-import { loadIgnoreList, saveIgnoreList } from './utils/ignore-list';
 
 // Development helper — generates realistic fake users
 function generateFakeUsers(count: number): XUser[] {
@@ -72,13 +71,10 @@ export function App() {
       // Small delay so the takeover/overlay finishes rendering
       const timer = setTimeout(() => {
         if (isOnFollowingPage()) {
-          const savedIgnore = loadIgnoreList();
-
           const baseState = {
             status: 'scanning' as const,
             progress: initialUsers.length > 0 ? Math.min(40, Math.round((initialUsers.length / 300) * 100)) : 0,
             users: initialUsers,
-            ignoreList: savedIgnore,
             selected: [],
             filter: DEFAULT_FILTER,
             searchTerm: '',
@@ -105,7 +101,6 @@ export function App() {
   const handleStartScan = async () => {
     const isConsoleBuild = typeof import.meta.env.CONSOLE_MODE !== 'undefined' && import.meta.env.CONSOLE_MODE === 'true';
     const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    const savedIgnore = loadIgnoreList();
 
     // Never use fake data when running as a real console script (pasted on x.com)
     if (isLocalhost && !isConsoleBuild) {
@@ -114,7 +109,6 @@ export function App() {
         status: 'scanning',
         progress: 100,
         users: fakeUsers,
-        ignoreList: savedIgnore,
         selected: [],
         filter: DEFAULT_FILTER,
         searchTerm: '',
@@ -134,7 +128,6 @@ export function App() {
       status: 'scanning',
       progress: 0,
       users: [],
-      ignoreList: savedIgnore,
       selected: [],
       filter: DEFAULT_FILTER,
       searchTerm: '',
@@ -164,16 +157,6 @@ export function App() {
     } catch (err) {
       console.error('[IAmNotYourFan] Real scan failed:', err);
       alert('Scanning ran into an error. Check the console for details. You can try the test snippet from TESTING_REAL_PROFILE.md as a fallback.');
-    }
-  };
-
-
-  const handleIgnoreListChange = (newList: XUser[]) => {
-    if (state.status === 'scanning') {
-      updateScanningState({ ignoreList: newList });
-    } else {
-      // if not scanning, still persist
-      saveIgnoreList(newList);
     }
   };
 
@@ -221,8 +204,6 @@ export function App() {
           onClose={() => setIsSettingsOpen(false)}
           timings={timings}
           onTimingsChange={setTimings}
-          ignoreList={state.ignoreList}
-          onIgnoreListChange={handleIgnoreListChange}
         />
       </>
     );
