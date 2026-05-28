@@ -1,4 +1,4 @@
-# Iamnotyourfan
+# IAmNotYourFan
 
 Find accounts you follow on X that don't follow you back — with a beautiful full UI experience.
 
@@ -32,7 +32,7 @@ This is currently the easiest and most reliable way to use it on your actual X a
 
 - A clean loader appears with a live counter.
 - The script scrolls your **original** X following page in the background (this allows it to collect hundreds of users reliably).
-- When it reaches the end (or you click Stop), it does a full clean takeover and opens the beautiful Iamnotyourfan interface with all your real data.
+- When it reaches the end (or you click Stop), it does a full clean takeover and opens the beautiful IAmNotYourFan interface with all your real data.
 
 You can then use filters, ignore list, exports, etc. in the polished UI.
 

@@ -39,7 +39,7 @@ export function NotSearching({ onStartScan }: NotSearchingProps) {
           margin: 0,
           color: '#e0a33a',
         }}>
-          Iamnotyourfan
+          IAmNotYourFan
         </h1>
 
         <p style={{

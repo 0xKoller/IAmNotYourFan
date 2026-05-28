@@ -60,7 +60,7 @@ export function parseUserFromCell(cell: Element): XUser | null {
       rawCellHtml: cell.outerHTML.substring(0, 800), // debug only
     };
   } catch (e) {
-    console.warn('[Iamnotyourfan] Failed to parse cell', e);
+    console.warn('[IAmNotYourFan] Failed to parse cell', e);
     return null;
   }
 }

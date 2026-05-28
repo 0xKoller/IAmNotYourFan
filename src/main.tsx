@@ -21,7 +21,7 @@ if (isConsoleMode) {
     // 3. Scroll the original X page aggressively in the background
     // 4. When done (or user stops), do full clean takeover with all data
 
-    console.log('%c[Iamnotyourfan] Real X + Following page detected — using loader + background collection mode', 'color:#e0a33a');
+    console.log('%c[IAmNotYourFan] Real X + Following page detected — using loader + background collection mode', 'color:#e0a33a');
 
     // Create simple full-screen loader
     const loader = document.createElement('div');
@@ -35,7 +35,7 @@ if (isConsoleMode) {
     loader.innerHTML = `
       <div style="text-align: center; max-width: 460px; padding: 2.5rem 2rem; background: rgba(30,29,26,0.95); border-radius: 16px; border: 1px solid rgba(247,241,232,0.1);">
         <div style="font-family: Georgia, serif; font-size: 2.6rem; color: #e0a33a; margin-bottom: 0.25rem;">
-          Iamnotyourfan
+          IAmNotYourFan
         </div>
         <div style="font-size: 1rem; margin-bottom: 1.25rem; opacity: 0.75;">
           Collecting your real following list
@@ -122,7 +122,7 @@ if (isConsoleMode) {
           finishAndTakeover();
         }
       } catch (err) {
-        console.error('[Iamnotyourfan] Collection error', err);
+        console.error('[IAmNotYourFan] Collection error', err);
         if (!isDone) finishAndTakeover();
       }
     };
@@ -132,7 +132,7 @@ if (isConsoleMode) {
       isDone = true;
 
       const finalUsers = Array.from(collected.values());
-      console.log(`[Iamnotyourfan] Collection finished. Total users: ${finalUsers.length}`);
+      console.log(`[IAmNotYourFan] Collection finished. Total users: ${finalUsers.length}`);
 
       // Remove loader
       loader.remove();
@@ -148,7 +148,7 @@ if (isConsoleMode) {
       (window as any).__IAMNOTYOURFAN_INITIAL_USERS = finalUsers;
 
       render(<App />, root);
-      document.title = 'Iamnotyourfan • X Non-Followers';
+      document.title = 'IAmNotYourFan • X Non-Followers';
     };
 
     pauseBtn.onclick = () => {
@@ -162,7 +162,7 @@ if (isConsoleMode) {
     };
 
     // Start collection
-    console.log('[Iamnotyourfan] Starting background collection on original X page...');
+    console.log('[IAmNotYourFan] Starting background collection on original X page...');
     startCollection();
 
   } else {
@@ -175,7 +175,7 @@ if (isConsoleMode) {
 
     const root = document.getElementById('iamnotyourfan-root')!;
     render(<App />, root);
-    document.title = 'Iamnotyourfan • X Non-Followers';
+    document.title = 'IAmNotYourFan • X Non-Followers';
   }
 
 } else {

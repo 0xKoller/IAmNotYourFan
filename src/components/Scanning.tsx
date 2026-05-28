@@ -2,18 +2,15 @@ import { useEffect, useState } from 'preact/hooks';
 import type { State } from '../model/state';
 import type { XUser } from '../model/user';
 import { loadIgnoreList, saveIgnoreList, toggleUserInIgnoreList } from '../utils/ignore-list';
-import { copyHandlesToClipboard, exportToJSON, exportToCSV } from '../utils/exports';
 
 interface ScanningProps {
   state: Extract<State, { status: 'scanning' }>;
   onUpdateState: (patch: Partial<Extract<State, { status: 'scanning' }>>) => void;
-  onStop: () => void;
-  onPauseToggle: () => void;
 }
 
 type Tab = 'non_ignored' | 'ignored';
 
-export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: ScanningProps) {
+export function Scanning({ state, onUpdateState }: ScanningProps) {
   const [activeTab, setActiveTab] = useState<Tab>('non_ignored');
   const [searchTerm, setSearchTerm] = useState(state.searchTerm || '');
   const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('non-reciprocal');
@@ -57,28 +54,23 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
     );
   });
 
+  // Sort A-Z by username (stable alphabetical order)
+  const sorted = [...filtered].sort((a, b) =>
+    a.username.localeCompare(b.username, undefined, { sensitivity: 'base' })
+  );
+
   // Pagination
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const nonReciprocalTotal = state.users.filter(u => !u.isMutual).length;
+  const mutualsTotal = state.users.filter(u => u.isMutual).length;
   const ignoredCount = state.ignoreList.length;
-
-  const isOverlayMode = !!(state as any).isOverlay;
 
   const handleToggleIgnore = (user: XUser) => {
     const newList = toggleUserInIgnoreList(state.ignoreList, user);
     onUpdateState({ ignoreList: newList });
-  };
-
-  const handleExport = (type: 'copy' | 'json' | 'csv') => {
-    const data = filtered;
-    if (data.length === 0) return;
-
-    if (type === 'copy') copyHandlesToClipboard(data);
-    if (type === 'json') exportToJSON(data);
-    if (type === 'csv') exportToCSV(data);
   };
 
   return (
@@ -86,7 +78,7 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #10100f 0%, #191714 52%, #111 100%)',
     }}>
-      {/* Top glassy Toolbar - very close to InstagramUnfollowers style */}
+      {/* Top glassy Toolbar - branding only */}
       <div class="glass" style={{
         position: 'fixed',
         top: 0,
@@ -100,68 +92,9 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
         borderBottom: '1px solid var(--line)',
         backdropFilter: 'blur(14px)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-          <div class="serif" style={{ color: '#e0a33a', fontSize: '1.35rem', fontWeight: 700 }}>
-            Iamnotyourfan
-          </div>
-
-          <div style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
-            {state.progress < 100 ? 'Scanning...' : 'Scan complete'} • {state.users.length} profiles
-          </div>
+        <div class="serif" style={{ color: '#e0a33a', fontSize: '1.35rem', fontWeight: 700 }}>
+          IAmNotYourFan
         </div>
-
-        {/* Progress bar in toolbar */}
-        <div style={{ width: '160px', marginRight: '1.5rem' }}>
-          <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '999px' }}>
-            <div style={{
-              width: `${state.progress}%`,
-              height: '100%',
-              background: 'linear-gradient(to right, #e0a33a, #62d6d0)',
-              transition: 'width 0.3s ease',
-              borderRadius: '999px',
-            }} />
-          </div>
-        </div>
-
-        {/* Export buttons */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginRight: '1rem' }}>
-          <button class="btn btn-secondary" onClick={() => handleExport('copy')} style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-            Copy handles
-          </button>
-          <button class="btn btn-secondary" onClick={() => handleExport('json')} style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-            JSON
-          </button>
-          <button class="btn btn-secondary" onClick={() => handleExport('csv')} style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}>
-            CSV
-          </button>
-        </div>
-
-        <button onClick={onPauseToggle} class="btn btn-secondary" style={{ marginRight: '0.5rem' }}>
-          {state.isPaused ? '▶ Resume' : '⏸ Pause'}
-        </button>
-
-        <button onClick={onStop} class="btn btn-danger" style={{ marginRight: '0.5rem' }}>
-          Stop
-        </button>
-
-        {isOverlayMode && (
-          <button 
-            onClick={() => (window as any).__iamnotyourfanFinishCollection?.()} 
-            class="btn btn-primary"
-            style={{ marginRight: '0.5rem', background: '#e0a33a', color: '#1c0d0b' }}
-          >
-            Finish Collection &amp; Go to Clean View
-          </button>
-        )}
-
-        <button 
-          onClick={() => (window as any).__openIamnotyourfanSettings?.()} 
-          class="btn btn-secondary" 
-          title="Settings"
-          style={{ padding: '0.5rem 0.75rem' }}
-        >
-          ⚙
-        </button>
       </div>
 
       {/* Main layout with sidebar */}
@@ -181,9 +114,23 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
           overflowY: 'auto',
         }}>
           <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '4px' }}>NON-RECIPROCAL</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '4px' }}>FOLLOWING</div>
+            <div style={{ fontSize: '2.1rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>
+              {state.users.length}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '4px' }}>YOU ARE A FAN</div>
             <div style={{ fontSize: '2.1rem', fontWeight: 700, color: '#ef6a62', lineHeight: 1 }}>
               {nonReciprocalTotal}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '4px' }}>BESTIES</div>
+            <div style={{ fontSize: '2.1rem', fontWeight: 700, color: '#8ccf7e', lineHeight: 1 }}>
+              {mutualsTotal}
             </div>
           </div>
 
@@ -203,7 +150,7 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
                 filter: { ...state.filter, showNonReciprocal: (e.target as HTMLInputElement).checked }
               })}
             />
-            <span style={{ fontSize: '0.9rem' }}>Only non-reciprocal</span>
+            <span style={{ fontSize: '0.9rem' }}>Only "you are a fan"</span>
           </label>
 
           <div style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: '#666' }}>
@@ -281,7 +228,7 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
                   border: '1px solid var(--line)'
                 }}
               >
-                {type === 'all' ? 'All' : type === 'non-reciprocal' ? 'Non-reciprocal' : 'Mutuals'}
+                {type === 'all' ? 'All' : type === 'non-reciprocal' ? 'You are a fan' : 'Besties'}
               </button>
             ))}
           </div>
@@ -349,9 +296,9 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
 
                     <div style={{ marginTop: '4px', fontSize: '0.75rem' }}>
                       {!user.isMutual ? (
-                        <span style={{ color: '#ef6a62', fontWeight: 600 }}>Does not follow you</span>
+                        <span style={{ color: '#ef6a62', fontWeight: 600 }}>You are a fan</span>
                       ) : (
-                        <span style={{ color: '#8ccf7e' }}>Follows you</span>
+                        <span style={{ color: '#8ccf7e' }}>Bestie</span>
                       )}
                     </div>
                   </div>

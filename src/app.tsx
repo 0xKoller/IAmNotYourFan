@@ -143,7 +143,7 @@ export function App() {
     });
 
     try {
-      console.log('%c[Iamnotyourfan] Starting real DOM scan on current page...', 'color:#e0a33a');
+      console.log('%c[IAmNotYourFan] Starting real DOM scan on current page...', 'color:#e0a33a');
       
       // Real auto-scroll + collection with live updates
       await autoScrollFollowingList((progress) => {
@@ -160,22 +160,13 @@ export function App() {
         users: finalUsers,
       });
       
-      console.log('%c[Iamnotyourfan] Real scan finished. Users found:', 'color:#62d6d0', finalUsers.length);
+      console.log('%c[IAmNotYourFan] Real scan finished. Users found:', 'color:#62d6d0', finalUsers.length);
     } catch (err) {
-      console.error('[Iamnotyourfan] Real scan failed:', err);
+      console.error('[IAmNotYourFan] Real scan failed:', err);
       alert('Scanning ran into an error. Check the console for details. You can try the test snippet from TESTING_REAL_PROFILE.md as a fallback.');
     }
   };
 
-  const handleStop = () => {
-    setState({ status: 'initial' });
-  };
-
-  const handlePauseToggle = () => {
-    if (state.status === 'scanning') {
-      updateScanningState({ isPaused: !state.isPaused });
-    }
-  };
 
   const handleIgnoreListChange = (newList: XUser[]) => {
     if (state.status === 'scanning') {
@@ -210,7 +201,7 @@ export function App() {
         users: Array.from(existing.values()) as XUser[],
       });
     } catch (err) {
-      console.error('[Iamnotyourfan] Background collection failed:', err);
+      console.error('[IAmNotYourFan] Background collection failed:', err);
     }
   };
 
@@ -224,8 +215,6 @@ export function App() {
         <Scanning
           state={state}
           onUpdateState={updateScanningState}
-          onStop={handleStop}
-          onPauseToggle={handlePauseToggle}
         />
         <SettingsModal
           isOpen={isSettingsOpen}
