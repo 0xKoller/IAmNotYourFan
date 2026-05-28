@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Iamnotyourfan — Find who doesn’t follow you back on X</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: #111;
+      color: #f7f1e8;
+      font-family: "Avenir Next", system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 720px;
+      text-align: center;
+    }
+    h1 {
+      font-family: Georgia, serif;
+      font-size: 3.2rem;
+      margin: 0 0 0.5rem;
+      color: #e0a33a;
+    }
+    .subtitle {
+      font-size: 1.15rem;
+      color: #ada79d;
+      margin-bottom: 2rem;
+    }
+    .copy-btn {
+      background: #e0a33a;
+      color: #1c0d0b;
+      border: none;
+      padding: 1rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .copy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 16px rgba(224,163,58,0.5);
+    }
+    .instructions {
+      margin-top: 2.5rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #ada79d;
+    }
+    code {
+      background: #222;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Iamnotyourfan</h1>
+    <p class="subtitle">Find the accounts you follow that don’t follow you back on X.</p>
+
+    <button class="copy-btn" onclick="copyScript()">
+      📋 Copy console script
+    </button>
+
+    <div class="instructions">
+      <p><strong>How to use (local dev):</strong></p>
+      <ol style="text-align: left; display: inline-block;">
+        <li>Run <code>pnpm dev</code> in the project</li>
+        <li>Open X.com and log in</li>
+        <li>Go to your <code>/following</code> page and scroll a bit</li>
+        <li>Open DevTools → Console</li>
+        <li>Paste the script (coming soon in build:console)</li>
+      </ol>
+      <p style="margin-top: 1.5rem; font-size: 0.85rem;">
+        Full beautiful UI experience (just like InstagramUnfollowers) is being built.<br>
+        This is the early local landing page.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function copyScript() {
+      // Placeholder — will be replaced by the real giant bundle later
+      const text = `// Iamnotyourfan console script will appear here after build:console\n// For now run: pnpm build:console`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.currentTarget;
+        const original = btn.textContent;
+        btn.textContent = '✅ Copied (placeholder)';
+        setTimeout(() => btn.textContent = original, 1800);
+      });
+    }
+  </script>
+</body>
+</html>
