@@ -50,6 +50,8 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
   const nonReciprocalTotal = state.users.filter(u => !u.isMutual).length;
   const ignoredCount = state.ignoreList.length;
 
+  const isOverlayMode = !!(state as any).isOverlay;
+
   const handleToggleIgnore = (user: XUser) => {
     const newList = toggleUserInIgnoreList(state.ignoreList, user);
     onUpdateState({ ignoreList: newList });
@@ -126,6 +128,16 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
         <button onClick={onStop} class="btn btn-danger" style={{ marginRight: '0.5rem' }}>
           Stop
         </button>
+
+        {isOverlayMode && (
+          <button 
+            onClick={() => (window as any).__iamnotyourfanFinishCollection?.()} 
+            class="btn btn-primary"
+            style={{ marginRight: '0.5rem', background: '#e0a33a', color: '#1c0d0b' }}
+          >
+            Finish Collection &amp; Go to Clean View
+          </button>
+        )}
 
         <button 
           onClick={() => (window as any).__openIamnotyourfanSettings?.()} 
@@ -248,6 +260,16 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
             {filtered.length === 0 && (
               <div style={{ color: 'var(--muted)', padding: '2rem 0' }}>
                 No users in this view.
+                <br /><br />
+                {(location.hostname.includes('x.com') || location.hostname.includes('twitter.com')) && (
+                  <button 
+                    onClick={() => (window as any).__forceRealScan?.()} 
+                    class="btn btn-primary"
+                    style={{ fontSize: '0.9rem' }}
+                  >
+                    Force Start Real Scan on this page
+                  </button>
+                )}
               </div>
             )}
 

@@ -77,9 +77,17 @@
         <li>Real X scanning (auto-scroll + collection) is functional when pasted on x.com/following</li>
       </ol>
       <p style="margin-top: 1.25rem; font-size: 0.85rem;">
-        Settings modal, persistent ignore list, and high-fidelity UI are already implemented.<br>
-        Full single-file console bundle + takeover coming next.
+        Settings modal, persistent ignore list, and high-fidelity UI are already implemented.
       </p>
+
+      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #333; text-align: left; font-size: 0.9rem;">
+        <strong>To test the full beautiful UI on your real profile:</strong><br><br>
+        1. Run: <code>pnpm build:console && pnpm make:console-bundle</code><br>
+        2. Open <code>dist/iamnotyourfan-full-console.js</code><br>
+        3. Copy the contents and paste it in the console on <code>x.com/yourname/following</code><br><br>
+        
+        The script will do a full page takeover and automatically start scanning your real following list.
+      </div>
     </div>
   </div>
 

@@ -46,11 +46,69 @@ export function App() {
     };
   }, []);
 
+  // Expose a force real scan for the UI fallback button
+  useEffect(() => {
+    (window as any).__forceRealScan = () => {
+      if (state.status === 'scanning') {
+        handleStartScan();
+      }
+    };
+    return () => {
+      delete (window as any).__forceRealScan;
+    };
+  }, [state.status]);
+
+  // Auto-start real scan when running as console script on real X
+  useEffect(() => {
+    const isRealConsole = 
+      (typeof import.meta.env.CONSOLE_MODE !== 'undefined' && import.meta.env.CONSOLE_MODE === 'true') ||
+      (location.hostname.includes('x.com') || location.hostname.includes('twitter.com'));
+
+    const isOverlay = !!(window as any).__IAMNOTYOURFAN_IS_OVERLAY;
+
+    if (isRealConsole && state.status === 'initial') {
+      const initialUsers = (window as any).__IAMNOTYOURFAN_INITIAL_USERS || [];
+
+      // Small delay so the takeover/overlay finishes rendering
+      const timer = setTimeout(() => {
+        if (isOnFollowingPage()) {
+          const savedIgnore = loadIgnoreList();
+
+          const baseState = {
+            status: 'scanning' as const,
+            progress: initialUsers.length > 0 ? Math.min(40, Math.round((initialUsers.length / 300) * 100)) : 0,
+            users: initialUsers,
+            ignoreList: savedIgnore,
+            selected: [],
+            filter: DEFAULT_FILTER,
+            searchTerm: '',
+            page: 1,
+            isPaused: false,
+            isOverlay,
+          };
+
+          setState(baseState);
+
+          // Continue harvesting from the original X page (only possible in overlay mode)
+          if (initialUsers.length > 0 || isOverlay) {
+            continueRealScanInBackground();
+          } else {
+            handleStartScan();
+          }
+        }
+      }, 450);
+
+      return () => clearTimeout(timer);
+    }
+  }, []); // run once on mount
+
   const handleStartScan = async () => {
-    const isPreview = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const isConsoleBuild = typeof import.meta.env.CONSOLE_MODE !== 'undefined' && import.meta.env.CONSOLE_MODE === 'true';
+    const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     const savedIgnore = loadIgnoreList();
 
-    if (isPreview) {
+    // Never use fake data when running as a real console script (pasted on x.com)
+    if (isLocalhost && !isConsoleBuild) {
       const fakeUsers = generateFakeUsers(87);
       setState({
         status: 'scanning',
@@ -84,22 +142,29 @@ export function App() {
       isPaused: false,
     });
 
-    // Real auto-scroll + collection with live updates
-    await autoScrollFollowingList((progress) => {
-      if ((state as any).status !== 'scanning' || (state as any).isPaused) return;
+    try {
+      console.log('%c[Iamnotyourfan] Starting real DOM scan on current page...', 'color:#e0a33a');
+      
+      // Real auto-scroll + collection with live updates
+      await autoScrollFollowingList((progress) => {
+        const currentUsers = collectVisibleUsers();
+        updateScanningState({
+          progress: Math.min(95, Math.round((progress.usersFound / 600) * 100)),
+          users: currentUsers,
+        });
+      }, { maxScrolls: 120, waitBetweenScrolls: 580 });
 
-      const currentUsers = collectVisibleUsers();
+      const finalUsers = collectVisibleUsers();
       updateScanningState({
-        progress: Math.min(95, Math.round((progress.usersFound / 600) * 100)),
-        users: currentUsers,
+        progress: 100,
+        users: finalUsers,
       });
-    }, { maxScrolls: 100, waitBetweenScrolls: 620 });
-
-    const finalUsers = collectVisibleUsers();
-    updateScanningState({
-      progress: 100,
-      users: finalUsers,
-    });
+      
+      console.log('%c[Iamnotyourfan] Real scan finished. Users found:', 'color:#62d6d0', finalUsers.length);
+    } catch (err) {
+      console.error('[Iamnotyourfan] Real scan failed:', err);
+      alert('Scanning ran into an error. Check the console for details. You can try the test snippet from TESTING_REAL_PROFILE.md as a fallback.');
+    }
   };
 
   const handleStop = () => {
@@ -118,6 +183,34 @@ export function App() {
     } else {
       // if not scanning, still persist
       saveIgnoreList(newList);
+    }
+  };
+
+  // Used when we already have some users from pre-takeover snapshot
+  const continueRealScanInBackground = async () => {
+    try {
+      await autoScrollFollowingList(() => {
+        const currentUsers = collectVisibleUsers();
+        // Merge with existing users (avoid duplicates)
+        const existing = new Map(((state as any).users || []).map((u: XUser) => [u.username, u]));
+        currentUsers.forEach((u: XUser) => existing.set(u.username, u));
+
+        updateScanningState({
+          progress: Math.min(95, Math.round((existing.size / 600) * 100)),
+          users: Array.from(existing.values()) as XUser[],
+        });
+      }, { maxScrolls: 100, waitBetweenScrolls: 580 });
+
+      const finalUsers = collectVisibleUsers();
+      const existing = new Map(((state as any).users || []).map((u: XUser) => [u.username, u]));
+      finalUsers.forEach((u: XUser) => existing.set(u.username, u));
+
+      updateScanningState({
+        progress: 100,
+        users: Array.from(existing.values()) as XUser[],
+      });
+    } catch (err) {
+      console.error('[Iamnotyourfan] Background collection failed:', err);
     }
   };
 

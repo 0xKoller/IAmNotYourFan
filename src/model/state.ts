@@ -26,6 +26,7 @@ export type ScanningState = {
   readonly searchTerm: string;
   readonly page: number;
   readonly isPaused: boolean;
+  readonly isOverlay?: boolean;        // true when we're overlaying on the real X page during collection
 };
 
 export type State =

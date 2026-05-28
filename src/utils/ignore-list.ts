@@ -21,7 +21,7 @@ export function loadIgnoreList(): XUser[] {
   }
 }
 
-export function saveIgnoreList(list: XUser[]) {
+export function saveIgnoreList(list: readonly XUser[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
   } catch {
@@ -29,7 +29,7 @@ export function saveIgnoreList(list: XUser[]) {
   }
 }
 
-export function toggleUserInIgnoreList(currentList: XUser[], user: XUser): XUser[] {
+export function toggleUserInIgnoreList(currentList: readonly XUser[], user: XUser): XUser[] {
   const exists = currentList.some(u => u.username === user.username);
   if (exists) {
     return currentList.filter(u => u.username !== user.username);

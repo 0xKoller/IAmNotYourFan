@@ -11,8 +11,12 @@ const MUTUAL_TEXT_EN = 'follows you';
 const MUTUAL_TEXT_FA = 'شما را دنبال می‌کند';
 
 export function isOnFollowingPage(): boolean {
-  const path = window.location.pathname.toLowerCase();
-  return path.endsWith('/following') || path.includes('/following');
+  try {
+    const path = window.location.pathname.toLowerCase();
+    return path.endsWith('/following') || path.includes('/following');
+  } catch {
+    return false;
+  }
 }
 
 export function getUserCells(): Element[] {
