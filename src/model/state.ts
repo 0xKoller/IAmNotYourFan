@@ -4,7 +4,7 @@
 import type { XUser } from './user';
 
 export type Filter = {
-  showNonReciprocal: boolean;
+  onlyNonReciprocal: boolean;
   showVerified: boolean;
 };
 
@@ -38,6 +38,6 @@ export const DEFAULT_TIMINGS: Timings = {
 };
 
 export const DEFAULT_FILTER: Filter = {
-  showNonReciprocal: true,
+  onlyNonReciprocal: false,
   showVerified: true,
 };
