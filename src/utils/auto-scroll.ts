@@ -69,3 +69,11 @@ export async function autoScrollFollowingList(
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// Expose for console testing
+if (typeof window !== 'undefined') {
+  (window as any).Iamnotyourfan = {
+    ...(window as any).Iamnotyourfan,
+    autoScrollFollowingList,
+  };
+}

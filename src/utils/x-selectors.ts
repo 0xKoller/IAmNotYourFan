@@ -135,3 +135,13 @@ export function collectVisibleUsers(): XUser[] {
 
   return users;
 }
+
+// Expose for easy console testing on real profile
+if (typeof window !== 'undefined') {
+  (window as any).Iamnotyourfan = {
+    ...(window as any).Iamnotyourfan,
+    collectVisibleUsers,
+    getUserCells,
+    isOnFollowingPage,
+  };
+}
