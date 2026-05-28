@@ -38,6 +38,6 @@ export const DEFAULT_TIMINGS: Timings = {
 };
 
 export const DEFAULT_FILTER: Filter = {
-  showNonReciprocal: true,
+  showNonReciprocal: false,
   showVerified: true,
 };
