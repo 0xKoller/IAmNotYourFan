@@ -1,10 +1,11 @@
 import { useState } from 'preact/hooks';
 import { NotSearching } from './components/NotSearching';
 import { Scanning } from './components/Scanning';
-import { type State, DEFAULT_FILTER, DEFAULT_TIMINGS } from './model/state';
+import { type State, DEFAULT_FILTER } from './model/state';
 import type { XUser } from './model/user';
 import { collectVisibleUsers, isOnFollowingPage } from './utils/x-selectors';
 import { autoScrollFollowingList } from './utils/auto-scroll';
+import { loadIgnoreList } from './utils/ignore-list';
 
 // Development helper — generates realistic fake users
 function generateFakeUsers(count: number): XUser[] {
@@ -36,6 +37,7 @@ export function App() {
 
   const handleStartScan = async () => {
     const isPreview = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const savedIgnore = loadIgnoreList();
 
     if (isPreview) {
       // Beautiful preview mode with fake data
@@ -44,7 +46,7 @@ export function App() {
         status: 'scanning',
         progress: 100,
         users: fakeUsers,
-        ignoreList: [],
+        ignoreList: savedIgnore,
         selected: [],
         filter: DEFAULT_FILTER,
         searchTerm: '',
@@ -64,7 +66,7 @@ export function App() {
       status: 'scanning',
       progress: 0,
       users: [],
-      ignoreList: [],
+      ignoreList: savedIgnore,
       selected: [],
       filter: DEFAULT_FILTER,
       searchTerm: '',
