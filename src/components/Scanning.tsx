@@ -123,8 +123,17 @@ export function Scanning({ state, onUpdateState, onStop, onPauseToggle }: Scanni
           {state.isPaused ? '▶ Resume' : '⏸ Pause'}
         </button>
 
-        <button onClick={onStop} class="btn btn-danger">
+        <button onClick={onStop} class="btn btn-danger" style={{ marginRight: '0.5rem' }}>
           Stop
+        </button>
+
+        <button 
+          onClick={() => (window as any).__openIamnotyourfanSettings?.()} 
+          class="btn btn-secondary" 
+          title="Settings"
+          style={{ padding: '0.5rem 0.75rem' }}
+        >
+          ⚙
         </button>
       </div>
 

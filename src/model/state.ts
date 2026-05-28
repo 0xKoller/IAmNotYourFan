@@ -1,21 +1,14 @@
 // Core application state for Iamnotyourfan
 // Strongly inspired by InstagramUnfollowers state machine
 
-export type User = {
-  username: string;
-  displayName: string;
-  avatarUrl?: string;
-  profileUrl: string;
-  isMutual: boolean;
-  isVerified?: boolean;
-};
+import type { XUser } from './user';
 
 export type Filter = {
   showNonReciprocal: boolean;
   showVerified: boolean;
 };
 
-export type IgnoreList = readonly User[];
+export type IgnoreList = readonly XUser[];
 
 export type Timings = {
   minDelayMs: number;
@@ -26,9 +19,9 @@ export type Timings = {
 export type ScanningState = {
   readonly status: 'scanning';
   readonly progress: number;           // 0-100
-  readonly users: readonly User[];
+  readonly users: readonly XUser[];
   readonly ignoreList: IgnoreList;
-  readonly selected: readonly User[];
+  readonly selected: readonly XUser[];
   readonly filter: Filter;
   readonly searchTerm: string;
   readonly page: number;

@@ -1,11 +1,12 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import { NotSearching } from './components/NotSearching';
 import { Scanning } from './components/Scanning';
-import { type State, DEFAULT_FILTER } from './model/state';
+import { SettingsModal } from './components/SettingsModal';
+import { type State, DEFAULT_FILTER, DEFAULT_TIMINGS } from './model/state';
 import type { XUser } from './model/user';
 import { collectVisibleUsers, isOnFollowingPage } from './utils/x-selectors';
 import { autoScrollFollowingList } from './utils/auto-scroll';
-import { loadIgnoreList } from './utils/ignore-list';
+import { loadIgnoreList, saveIgnoreList } from './utils/ignore-list';
 
 // Development helper — generates realistic fake users
 function generateFakeUsers(count: number): XUser[] {
@@ -28,6 +29,8 @@ function generateFakeUsers(count: number): XUser[] {
 
 export function App() {
   const [state, setState] = useState<State>({ status: 'initial' });
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [timings, setTimings] = useState(DEFAULT_TIMINGS);
 
   const updateScanningState = (patch: Partial<Extract<State, { status: 'scanning' }>>) => {
     if (state.status === 'scanning') {
@@ -35,12 +38,19 @@ export function App() {
     }
   };
 
+  // Expose settings opener for the gear button in Scanning toolbar
+  useEffect(() => {
+    (window as any).__openIamnotyourfanSettings = () => setIsSettingsOpen(true);
+    return () => {
+      delete (window as any).__openIamnotyourfanSettings;
+    };
+  }, []);
+
   const handleStartScan = async () => {
     const isPreview = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     const savedIgnore = loadIgnoreList();
 
     if (isPreview) {
-      // Beautiful preview mode with fake data
       const fakeUsers = generateFakeUsers(87);
       setState({
         status: 'scanning',
@@ -74,18 +84,17 @@ export function App() {
       isPaused: false,
     });
 
-    // Start auto-scroll + collection
+    // Real auto-scroll + collection with live updates
     await autoScrollFollowingList((progress) => {
-      if (state.status !== 'scanning') return;
+      if ((state as any).status !== 'scanning' || (state as any).isPaused) return;
 
       const currentUsers = collectVisibleUsers();
       updateScanningState({
-        progress: Math.min(95, Math.round((progress.usersFound / 400) * 100)),
+        progress: Math.min(95, Math.round((progress.usersFound / 600) * 100)),
         users: currentUsers,
       });
-    }, { maxScrolls: 80, waitBetweenScrolls: 550 });
+    }, { maxScrolls: 100, waitBetweenScrolls: 620 });
 
-    // Final collection
     const finalUsers = collectVisibleUsers();
     updateScanningState({
       progress: 100,
@@ -103,18 +112,37 @@ export function App() {
     }
   };
 
+  const handleIgnoreListChange = (newList: XUser[]) => {
+    if (state.status === 'scanning') {
+      updateScanningState({ ignoreList: newList });
+    } else {
+      // if not scanning, still persist
+      saveIgnoreList(newList);
+    }
+  };
+
   if (state.status === 'initial') {
     return <NotSearching onStartScan={handleStartScan} state={state} />;
   }
 
   if (state.status === 'scanning') {
     return (
-      <Scanning
-        state={state}
-        onUpdateState={updateScanningState}
-        onStop={handleStop}
-        onPauseToggle={handlePauseToggle}
-      />
+      <>
+        <Scanning
+          state={state}
+          onUpdateState={updateScanningState}
+          onStop={handleStop}
+          onPauseToggle={handlePauseToggle}
+        />
+        <SettingsModal
+          isOpen={isSettingsOpen}
+          onClose={() => setIsSettingsOpen(false)}
+          timings={timings}
+          onTimingsChange={setTimings}
+          ignoreList={state.ignoreList}
+          onIgnoreListChange={handleIgnoreListChange}
+        />
+      </>
     );
   }
 
