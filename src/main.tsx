@@ -74,7 +74,7 @@ if (isConsoleMode) {
         </div>
         
         <div style="margin-top: 1.25rem; font-size: 0.75rem; opacity: 0.55;">
-          Scrolling your original following page in the background
+          Stay on this window until collection completes. We’re scrolling your original following page in the background.
         </div>
       </div>
     `;

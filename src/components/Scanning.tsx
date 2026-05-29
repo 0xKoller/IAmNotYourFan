@@ -25,8 +25,9 @@ export function Scanning({
   onClearActivityResults,
 }: ScanningProps) {
   const [searchTerm, setSearchTerm] = useState(state.searchTerm || '');
-  const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('non-reciprocal');
+  const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('all');
   const [activityFilter, setActivityFilter] = useState<'any' | 'inactive' | 'active' | 'unknown'>('any');
+  const [sortDirection, setSortDirection] = useState<'az' | 'za'>('az');
   const [inactivityMonths, setInactivityMonths] = useState('6');
   const [isActivityConfirmOpen, setIsActivityConfirmOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,10 +60,11 @@ export function Scanning({
     );
   });
 
-  // Sort A-Z by username (stable alphabetical order)
-  const sorted = [...filtered].sort((a, b) =>
-    a.username.localeCompare(b.username, undefined, { sensitivity: 'base' })
-  );
+  const sorted = [...filtered].sort((a, b) => {
+    if (filterType === 'all' && a.isMutual !== b.isMutual) return a.isMutual ? 1 : -1;
+    const byUsername = a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
+    return sortDirection === 'az' ? byUsername : -byUsername;
+  });
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
@@ -369,6 +371,28 @@ export function Scanning({
                     }}
                   >
                     {type === 'any' ? `Any (${state.users.length})` : type === 'inactive' ? `Inactive (${inactiveTotal})` : type === 'active' ? `Active (${activeTotal})` : `Unknown (${unknownTotal})`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '0.4rem' }}>
+              <div style={{ color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 700 }}>Sort</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {(['az', 'za'] as const).map(direction => (
+                  <button
+                    key={direction}
+                    onClick={() => { setSortDirection(direction); setCurrentPage(1); }}
+                    class="btn"
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '0.8rem',
+                      background: sortDirection === direction ? 'var(--amber)' : 'rgba(255,255,255,0.06)',
+                      color: sortDirection === direction ? '#1c0d0b' : 'var(--text)',
+                      border: '1px solid var(--line)'
+                    }}
+                  >
+                    {direction === 'az' ? 'A-Z' : 'Z-A'}
                   </button>
                 ))}
               </div>
