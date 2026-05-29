@@ -97,6 +97,17 @@
   background: rgba(255,255,255,0.08) !important;
 }
 
+.header-icon-link {
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.header-icon-link:hover {
+  color: var(--amber) !important;
+  border-color: rgba(224, 163, 58, 0.42) !important;
+  background: rgba(224, 163, 58, 0.09) !important;
+  transform: translateY(-1px);
+}
+
 .result-card img {
   border-radius: 50%;
   border: 1px solid var(--line);

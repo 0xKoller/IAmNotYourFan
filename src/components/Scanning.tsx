@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import type { ComponentChildren } from 'preact';
 import type { State } from '../model/state';
 import type { XUser } from '../model/user';
 
@@ -77,6 +78,9 @@ export function Scanning({
   const currentAccount = state.currentAccount;
   const inactivityMonthCount = Number(inactivityMonths);
   const canStartActivityScan = Number.isInteger(inactivityMonthCount) && inactivityMonthCount > 0;
+  const currentActivityUser = state.activityScan?.currentUsername
+    ? state.users.find(user => user.username === state.activityScan?.currentUsername)
+    : undefined;
 
   const confirmActivityScan = () => {
     if (!canStartActivityScan) return;
@@ -103,8 +107,24 @@ export function Scanning({
         borderBottom: '1px solid var(--line)',
         backdropFilter: 'blur(14px)',
       }}>
-        <div class="serif" style={{ color: '#e0a33a', fontSize: '1.35rem', fontWeight: 700 }}>
-          IAmNotYourFan
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+          <div class="serif" style={{ color: '#e0a33a', fontSize: '1.35rem', fontWeight: 700 }}>
+            IAmNotYourFan
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <HeaderIconLink href="https://github.com/0xKoller/IAmNotYourFan" label="Open GitHub repository">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.45 11.45 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.83.58A12 12 0 0 0 12 .5Z" />
+              </svg>
+            </HeaderIconLink>
+            <HeaderIconLink href="https://0xkoller.github.io/IAmNotYourFan/" label="Open project website">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M2 12h20" />
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" />
+              </svg>
+            </HeaderIconLink>
+          </div>
         </div>
       </div>
 
@@ -219,19 +239,6 @@ export function Scanning({
             </div>
           </div>
 
-          <div style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.5rem' }}>FILTERS</div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              disabled={filterType !== 'all'}
-              checked={state.filter.onlyNonReciprocal}
-              onChange={(e) => onUpdateState({
-                filter: { ...state.filter, onlyNonReciprocal: (e.target as HTMLInputElement).checked }
-              })}
-            />
-            <span style={{ fontSize: '0.9rem' }}>Only "you are a fan"</span>
-          </label>
-
           <div style={{ marginTop: '1.25rem', display: 'grid', gap: '0.5rem' }}>
             <label style={{ display: 'grid', gap: '0.35rem' }}>
               <span style={{ fontSize: '0.74rem', color: 'var(--muted)' }}>Inactive after months</span>
@@ -315,6 +322,30 @@ export function Scanning({
                     {type === 'all' ? `All (${state.users.length})` : type === 'non-reciprocal' ? `You are a fan (${nonReciprocalTotal})` : `Besties (${mutualsTotal})`}
                   </button>
                 ))}
+                <label style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  minHeight: '36px',
+                  padding: '0 0.75rem',
+                  borderRadius: '8px',
+                  border: '1px solid var(--line)',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: filterType === 'all' ? 'var(--text)' : 'var(--muted)',
+                  cursor: filterType === 'all' ? 'pointer' : 'not-allowed',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                }}>
+                  <input
+                    type="checkbox"
+                    disabled={filterType !== 'all'}
+                    checked={state.filter.onlyNonReciprocal}
+                    onChange={(e) => onUpdateState({
+                      filter: { ...state.filter, onlyNonReciprocal: (e.target as HTMLInputElement).checked }
+                    })}
+                  />
+                  Only "you are a fan"
+                </label>
               </div>
             </div>
 
@@ -353,7 +384,7 @@ export function Scanning({
                 <div>
                   <div style={{ color: 'var(--amber)', fontWeight: 700, fontSize: '0.95rem' }}>Quiet inactive account scan</div>
                   <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '3px' }}>
-                    {state.activityScan.currentUsername ? `Checking @${state.activityScan.currentUsername}` : state.activityScan.message || 'Ready'}
+                    {state.activityScan.currentUsername ? 'Checking following profiles' : state.activityScan.message || 'Ready'}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -380,12 +411,18 @@ export function Scanning({
                 border: '1px solid rgba(98,214,208,0.22)',
                 borderRadius: '12px',
                 background: 'rgba(98,214,208,0.065)',
+                flexWrap: 'wrap',
               }}>
-                <span style={{ color: 'var(--muted)', fontSize: '0.82rem', fontWeight: 700 }}>Checked</span>
-                <span style={{ color: 'var(--text)', fontSize: '1.35rem', fontWeight: 800, lineHeight: 1 }}>
-                  {state.activityScan.checked.toLocaleString()} of {state.activityScan.total.toLocaleString()}
-                </span>
-                <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>following profiles</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', flex: '1 1 260px', minWidth: 0 }}>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.82rem', fontWeight: 700 }}>Checked</span>
+                  <span style={{ color: 'var(--text)', fontSize: '1.35rem', fontWeight: 800, lineHeight: 1 }}>
+                    {state.activityScan.checked.toLocaleString()} of {state.activityScan.total.toLocaleString()}
+                  </span>
+                  <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>following profiles</span>
+                </div>
+                {state.activityScan.currentUsername && (
+                  <CurrentScanUser user={currentActivityUser} username={state.activityScan.currentUsername} />
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem' }}>
@@ -488,8 +525,26 @@ export function Scanning({
                   </div>
 
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                      {user.displayName || user.username}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: '1 1 auto' }}>
+                        {user.displayName || user.username}
+                      </div>
+                      {user.activityStatus && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          borderRadius: '999px',
+                          border: '1px solid var(--line)',
+                          padding: '2px 7px',
+                          fontSize: '0.68rem',
+                          color: activityColor(user),
+                          background: 'rgba(255,255,255,0.05)',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0,
+                        }}>
+                          {activityLabel(user)}
+                        </span>
+                      )}
                     </div>
                     <div style={{ color: '#62d6d0', fontSize: '0.78rem' }}>
                       @{user.username}
@@ -503,22 +558,6 @@ export function Scanning({
                       )}
                     </div>
 
-                    {user.activityStatus && (
-                      <div style={{ marginTop: '5px' }}>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          borderRadius: '999px',
-                          border: '1px solid var(--line)',
-                          padding: '2px 7px',
-                          fontSize: '0.68rem',
-                          color: activityColor(user),
-                          background: 'rgba(255,255,255,0.05)',
-                        }}>
-                          {activityLabel(user)}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               );
@@ -549,6 +588,77 @@ export function Scanning({
               </button>
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeaderIconLink({ href, label, children }: { href: string; label: string; children: ComponentChildren }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener"
+      aria-label={label}
+      title={label}
+      class="header-icon-link"
+      style={{
+        width: '32px',
+        height: '32px',
+        borderRadius: '999px',
+        border: '1px solid var(--line)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'var(--muted)',
+        background: 'rgba(255,255,255,0.045)',
+        textDecoration: 'none',
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+function CurrentScanUser({ user, username }: { user?: XUser; username: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
+      {user?.avatarUrl ? (
+        <img
+          src={user.avatarUrl}
+          width="34"
+          height="34"
+          alt=""
+          style={{ borderRadius: '50%', border: '1px solid var(--line)', flexShrink: 0 }}
+        />
+      ) : (
+        <div style={{
+          width: '34px',
+          height: '34px',
+          borderRadius: '50%',
+          border: '1px solid var(--line)',
+          background: '#222',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--muted)',
+          fontSize: '0.8rem',
+          fontWeight: 800,
+          flexShrink: 0,
+        }}>
+          {username[0]?.toUpperCase()}
+        </div>
+      )}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ color: 'var(--muted)', fontSize: '0.68rem', fontWeight: 700 }}>CURRENTLY CHECKING</div>
+        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'baseline', minWidth: 0 }}>
+          {user?.displayName && (
+            <span style={{ color: 'var(--text)', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>
+              {user.displayName}
+            </span>
+          )}
+          <span style={{ color: '#62d6d0', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>@{username}</span>
         </div>
       </div>
     </div>
