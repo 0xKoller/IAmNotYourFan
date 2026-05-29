@@ -1,12 +1,11 @@
 import { useState } from 'preact/hooks';
 import type { State } from '../model/state';
 import type { XUser } from '../model/user';
-import { copyHandlesToClipboard, exportToCSV, exportToJSON } from '../utils/exports';
 
 interface ScanningProps {
   state: Extract<State, { status: 'scanning' }>;
   onUpdateState: (patch: Partial<Extract<State, { status: 'scanning' }>>) => void;
-  onStartActivityScan: () => void;
+  onStartActivityScan: (inactivityMonths: number) => void;
   onPauseActivityScan: () => void;
   onResumeActivityScan: () => void;
   onReopenActivityHelper: () => void;
@@ -27,6 +26,7 @@ export function Scanning({
   const [searchTerm, setSearchTerm] = useState(state.searchTerm || '');
   const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('non-reciprocal');
   const [activityFilter, setActivityFilter] = useState<'any' | 'inactive' | 'active' | 'unknown'>('any');
+  const [inactivityMonths, setInactivityMonths] = useState('6');
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 50;
 
@@ -73,12 +73,9 @@ export function Scanning({
   const activeTotal = state.users.filter(u => u.activityStatus === 'active').length;
   const unknownTotal = state.users.filter(u => u.activityStatus === 'unknown').length;
   const checkedTotal = inactiveTotal + activeTotal + unknownTotal;
-  const currentExportName = `iamnotyourfan-${filterType}-${activityFilter}`;
   const currentAccount = state.currentAccount;
-
-  const handleCopy = async () => {
-    await copyHandlesToClipboard(sorted as XUser[]);
-  };
+  const inactivityMonthCount = Number(inactivityMonths);
+  const canStartActivityScan = Number.isInteger(inactivityMonthCount) && inactivityMonthCount > 0;
 
   return (
     <div class="iamnotyourfan" style={{
@@ -229,7 +226,39 @@ export function Scanning({
           </label>
 
           <div style={{ marginTop: '1.25rem', display: 'grid', gap: '0.5rem' }}>
-            <button onClick={onStartActivityScan} class="btn btn-primary" style={{ justifyContent: 'center', padding: '0.65rem 0.75rem', fontSize: '0.82rem' }}>
+            <label style={{ display: 'grid', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.74rem', color: 'var(--muted)' }}>Inactive after months</span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                placeholder="Enter months"
+                value={inactivityMonths}
+                onInput={(e) => setInactivityMonths((e.target as HTMLInputElement).value)}
+                style={{
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--line)',
+                  color: 'white',
+                  padding: '0.55rem 0.7rem',
+                  borderRadius: '8px',
+                  fontSize: '0.86rem',
+                }}
+              />
+            </label>
+            <button
+              onClick={() => canStartActivityScan && onStartActivityScan(inactivityMonthCount)}
+              disabled={!canStartActivityScan}
+              class="btn btn-primary"
+              style={{
+                justifyContent: 'center',
+                padding: '0.65rem 0.75rem',
+                fontSize: '0.82rem',
+                opacity: canStartActivityScan ? 1 : 0.5,
+                cursor: canStartActivityScan ? 'pointer' : 'not-allowed',
+              }}
+            >
               Scan inactive via X API
             </button>
             <button onClick={onClearActivityResults} class="btn btn-secondary" style={{ justifyContent: 'center', padding: '0.55rem 0.75rem', fontSize: '0.78rem' }}>
@@ -240,24 +269,70 @@ export function Scanning({
 
         {/* Main content area */}
         <div class="dashboard-main" style={{ padding: '1.25rem 2rem' }}>
-          {/* Search */}
-          <input
-            type="text"
-            placeholder="Search by username or name..."
-            value={searchTerm}
-            onInput={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              marginBottom: '1rem',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid var(--line)',
-              color: 'white',
-              padding: '0.6rem 1rem',
-              borderRadius: '8px',
-              fontSize: '0.95rem',
-            }}
-          />
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'end' }}>
+            <label style={{ display: 'grid', gap: '0.4rem', minWidth: '260px', flex: '1 1 280px' }}>
+              <span style={{ color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 700 }}>Search users</span>
+              <input
+                type="text"
+                placeholder="Username or display name"
+                value={searchTerm}
+                onInput={(e) => setSearchTerm((e.target as HTMLInputElement).value)}
+                style={{
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--line)',
+                  color: 'white',
+                  padding: '0.6rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '0.95rem',
+                }}
+              />
+            </label>
+
+            <div style={{ display: 'grid', gap: '0.4rem' }}>
+              <div style={{ color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 700 }}>Relationship</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {(['all', 'non-reciprocal', 'mutuals'] as const).map(type => (
+                  <button
+                    key={type}
+                    onClick={() => { setFilterType(type); setCurrentPage(1); }}
+                    class="btn"
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '0.85rem',
+                      background: filterType === type ? 'var(--amber)' : 'rgba(255,255,255,0.06)',
+                      color: filterType === type ? '#1c0d0b' : 'var(--text)',
+                      border: '1px solid var(--line)'
+                    }}
+                  >
+                    {type === 'all' ? `All (${state.users.length})` : type === 'non-reciprocal' ? `You are a fan (${nonReciprocalTotal})` : `Besties (${mutualsTotal})`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '0.4rem' }}>
+              <div style={{ color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 700 }}>Activity</div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {(['any', 'inactive', 'active', 'unknown'] as const).map(type => (
+                  <button
+                    key={type}
+                    onClick={() => { setActivityFilter(type); setCurrentPage(1); }}
+                    class="btn"
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '0.8rem',
+                      background: activityFilter === type ? '#62d6d0' : 'rgba(255,255,255,0.06)',
+                      color: activityFilter === type ? '#071414' : 'var(--text)',
+                      border: '1px solid var(--line)'
+                    }}
+                  >
+                    {type === 'any' ? `Any (${state.users.length})` : type === 'inactive' ? `Inactive (${inactiveTotal})` : type === 'active' ? `Active (${activeTotal})` : `Unknown (${unknownTotal})`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {state.activityScan && (
             <div class="glass" style={{
@@ -308,52 +383,6 @@ export function Scanning({
               </div>
             </div>
           )}
-
-          {/* Filters */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            {(['all', 'non-reciprocal', 'mutuals'] as const).map(type => (
-              <button
-                key={type}
-                onClick={() => { setFilterType(type); setCurrentPage(1); }}
-                class="btn"
-                style={{
-                  padding: '6px 14px',
-                  fontSize: '0.85rem',
-                  background: filterType === type ? 'var(--amber)' : 'rgba(255,255,255,0.06)',
-                  color: filterType === type ? '#1c0d0b' : 'var(--text)',
-                  border: '1px solid var(--line)'
-                }}
-              >
-                {type === 'all' ? 'All' : type === 'non-reciprocal' ? 'You are a fan' : 'Besties'}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ color: 'var(--muted)', fontSize: '0.8rem', marginRight: '2px' }}>Activity</span>
-            {(['any', 'inactive', 'active', 'unknown'] as const).map(type => (
-              <button
-                key={type}
-                onClick={() => { setActivityFilter(type); setCurrentPage(1); }}
-                class="btn"
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '0.8rem',
-                  background: activityFilter === type ? '#62d6d0' : 'rgba(255,255,255,0.06)',
-                  color: activityFilter === type ? '#071414' : 'var(--text)',
-                  border: '1px solid var(--line)'
-                }}
-              >
-                {type === 'any' ? 'Any' : type[0].toUpperCase() + type.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-            <button onClick={handleCopy} class="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Copy handles</button>
-            <button onClick={() => exportToCSV(sorted as XUser[], `${currentExportName}.csv`)} class="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Export CSV</button>
-            <button onClick={() => exportToJSON(sorted as XUser[], `${currentExportName}.json`)} class="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Export JSON</button>
-          </div>
 
           {/* User Cards Grid */}
           <div style={{

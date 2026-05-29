@@ -226,7 +226,7 @@ export function App() {
     }
   };
 
-  const startActivityScan = () => {
+  const startActivityScan = (inactivityMonths: number) => {
     if (state.status !== 'scanning') return;
     activityScanRef.current?.stop();
     const users = mergeSavedActivity(state.users);
@@ -234,6 +234,7 @@ export function App() {
 
     const controller = createActivityScan({
       users,
+      inactivityMonths,
       onResult: updateUsersWithActivityResult,
       onProgress: (progress) => {
         updateScanningState({

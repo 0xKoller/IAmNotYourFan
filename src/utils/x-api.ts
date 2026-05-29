@@ -106,7 +106,7 @@ export function installXApiRequestRecorder() {
   debug('auth-recorder:installed');
 }
 
-export async function checkActivityViaXApi(username: string): Promise<ActivityResult | null> {
+export async function checkActivityViaXApi(username: string, inactivityMonths: number): Promise<ActivityResult | null> {
   if (!isOnXOrigin()) {
     debug('skip:not-x-origin', { username, hostname: location.hostname });
     return null;
@@ -134,16 +134,17 @@ export async function checkActivityViaXApi(username: string): Promise<ActivityRe
   const date = new Date(latest.createdAt);
   if (Number.isNaN(date.getTime())) return unknownResult(username, 'X API returned an unreadable activity date');
 
-  if (latest.isRepost && isOlderThanSixMonths(date)) {
+  if (latest.isRepost && isOlderThanMonths(date, inactivityMonths)) {
     return unknownResult(username, 'Latest API item is an old repost with ambiguous repost date');
   }
 
   return {
     username,
-    activityStatus: isOlderThanSixMonths(date) ? 'inactive' : 'active',
+    activityStatus: isOlderThanMonths(date, inactivityMonths) ? 'inactive' : 'active',
+    inactivityMonths,
     lastActivityAt: date.toISOString(),
     activityCheckedAt: new Date().toISOString(),
-    activityReason: latest.isRepost ? 'Latest API activity is a repost' : 'Latest API activity is a post',
+    activityReason: `${latest.isRepost ? 'Latest API activity is a repost' : 'Latest API activity is a post'}; inactive after ${inactivityMonths} months`,
   };
 }
 
@@ -456,9 +457,9 @@ function isOnXOrigin() {
   return location.hostname.includes('x.com') || location.hostname.includes('twitter.com');
 }
 
-function isOlderThanSixMonths(date: Date) {
+function isOlderThanMonths(date: Date, months: number) {
   const cutoff = new Date();
-  cutoff.setMonth(cutoff.getMonth() - 6);
+  cutoff.setMonth(cutoff.getMonth() - months);
   return date.getTime() < cutoff.getTime();
 }
 

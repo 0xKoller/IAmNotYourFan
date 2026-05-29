@@ -3,7 +3,7 @@ import { checkActivityViaXApi } from './x-api';
 
 export type ActivityResult = Pick<XUser,
   'username' | 'activityStatus' | 'lastActivityAt' | 'activityCheckedAt' | 'activityReason'
->;
+> & { inactivityMonths?: number };
 
 export type ActivityProgress = {
   status: 'running' | 'paused' | 'blocked' | 'done';
@@ -29,6 +29,7 @@ export type ActivityScanController = {
 
 type CreateActivityScanOptions = {
   users: readonly XUser[];
+  inactivityMonths: number;
   onResult: (result: ActivityResult) => void;
   onProgress: (progress: ActivityProgress) => void;
   onDone: () => void;
@@ -66,7 +67,7 @@ export function clearSavedActivityResults() {
 export function createActivityScan(options: CreateActivityScanOptions): ActivityScanController {
   const startedAt = new Date().toISOString();
   const users = orderUsers(options.users);
-  const saved = readSavedResults();
+  const saved = readSavedResults(options.inactivityMonths);
   const queue = users.filter(user => !saved.has(user.username));
   const counts = countResults(users, saved);
   let checked = users.length - queue.length;
@@ -104,7 +105,7 @@ export function createActivityScan(options: CreateActivityScanOptions): Activity
 
     const user = queue[currentIndex];
     emit('running', user.username);
-    const result = await checkProfileActivity(user);
+    const result = await checkProfileActivity(user, options.inactivityMonths);
     if (isStopped) return;
 
     currentIndex += 1;
@@ -154,7 +155,7 @@ function orderUsers(users: readonly XUser[]): XUser[] {
   });
 }
 
-function readSavedResults(): Map<string, ActivityResult> {
+function readSavedResults(inactivityMonths?: number): Map<string, ActivityResult> {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return new Map();
@@ -163,6 +164,7 @@ function readSavedResults(): Map<string, ActivityResult> {
     return new Map(parsed
       .filter(result => result.username && result.activityCheckedAt)
       .filter(result => now - new Date(result.activityCheckedAt!).getTime() <= RESULT_TTL_MS)
+      .filter(result => inactivityMonths === undefined || result.inactivityMonths === inactivityMonths)
       .map(result => [result.username, result]));
   } catch {
     return new Map();
@@ -186,11 +188,11 @@ function countResults(users: readonly XUser[], saved: Map<string, ActivityResult
   return counts;
 }
 
-async function checkProfileActivity(user: XUser): Promise<ActivityResult> {
-  let result = await checkActivityViaXApi(user.username);
+async function checkProfileActivity(user: XUser, inactivityMonths: number): Promise<ActivityResult> {
+  let result = await checkActivityViaXApi(user.username, inactivityMonths);
   if (result) return result;
   await wait(RETRY_DELAY_MS);
-  result = await checkActivityViaXApi(user.username);
+  result = await checkActivityViaXApi(user.username, inactivityMonths);
   return result || unknownResult(user.username, 'Quiet X API scan is unavailable for this account right now');
 }
 
