@@ -27,6 +27,7 @@ export function Scanning({
   const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('non-reciprocal');
   const [activityFilter, setActivityFilter] = useState<'any' | 'inactive' | 'active' | 'unknown'>('any');
   const [inactivityMonths, setInactivityMonths] = useState('6');
+  const [isActivityConfirmOpen, setIsActivityConfirmOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 50;
 
@@ -76,6 +77,12 @@ export function Scanning({
   const currentAccount = state.currentAccount;
   const inactivityMonthCount = Number(inactivityMonths);
   const canStartActivityScan = Number.isInteger(inactivityMonthCount) && inactivityMonthCount > 0;
+
+  const confirmActivityScan = () => {
+    if (!canStartActivityScan) return;
+    setIsActivityConfirmOpen(false);
+    onStartActivityScan(inactivityMonthCount);
+  };
 
   return (
     <div class="iamnotyourfan" style={{
@@ -248,7 +255,7 @@ export function Scanning({
               />
             </label>
             <button
-              onClick={() => canStartActivityScan && onStartActivityScan(inactivityMonthCount)}
+              onClick={() => canStartActivityScan && setIsActivityConfirmOpen(true)}
               disabled={!canStartActivityScan}
               class="btn btn-primary"
               style={{
@@ -259,7 +266,7 @@ export function Scanning({
                 cursor: canStartActivityScan ? 'pointer' : 'not-allowed',
               }}
             >
-              Scan inactive via X API
+              Scan inactive
             </button>
             <button onClick={onClearActivityResults} class="btn btn-secondary" style={{ justifyContent: 'center', padding: '0.55rem 0.75rem', fontSize: '0.78rem' }}>
               Clear inactive results
@@ -337,10 +344,10 @@ export function Scanning({
           {state.activityScan && (
             <div class="glass" style={{
               marginBottom: '1rem',
-              padding: '1rem',
+              padding: '1.1rem',
               borderRadius: '14px',
               display: 'grid',
-              gap: '0.75rem',
+              gap: '0.9rem',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
                 <div>
@@ -365,21 +372,71 @@ export function Scanning({
                 </div>
               </div>
 
-              <div style={{ width: '100%', height: '7px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-                <div style={{
-                  width: `${state.activityScan.total ? Math.round((state.activityScan.checked / state.activityScan.total) * 100) : 0}%`,
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #e0a33a, #62d6d0)',
-                  borderRadius: '999px',
-                }} />
+              <div style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '0.5rem',
+                padding: '0.85rem 1rem',
+                border: '1px solid rgba(98,214,208,0.22)',
+                borderRadius: '12px',
+                background: 'rgba(98,214,208,0.065)',
+              }}>
+                <span style={{ color: 'var(--muted)', fontSize: '0.82rem', fontWeight: 700 }}>Checked</span>
+                <span style={{ color: 'var(--text)', fontSize: '1.35rem', fontWeight: 800, lineHeight: 1 }}>
+                  {state.activityScan.checked.toLocaleString()} of {state.activityScan.total.toLocaleString()}
+                </span>
+                <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>following profiles</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem' }}>
-                <ActivityMetric label="Checked" value={`${state.activityScan.checked}/${state.activityScan.total}`} />
                 <ActivityMetric label="Inactive" value={state.activityScan.inactive.toString()} tone="#f2b84b" />
                 <ActivityMetric label="Active" value={state.activityScan.active.toString()} tone="#8ccf7e" />
                 <ActivityMetric label="Unknown" value={state.activityScan.unknown.toString()} tone="#9aa0a6" />
                 <ActivityMetric label="ETA" value={formatEta(state.activityScan.etaSeconds)} />
+              </div>
+            </div>
+          )}
+
+          {isActivityConfirmOpen && (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 300,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+              background: 'rgba(0,0,0,0.62)',
+              backdropFilter: 'blur(8px)',
+            }}>
+              <div class="glass" role="dialog" aria-modal="true" aria-labelledby="activity-confirm-title" style={{
+                width: 'min(520px, 100%)',
+                borderRadius: '18px',
+                padding: '1.35rem',
+                boxShadow: 'var(--shadow-2)',
+              }}>
+                <div id="activity-confirm-title" style={{ color: 'var(--amber)', fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.55rem' }}>
+                  Experimental inactive scan
+                </div>
+                <div style={{ color: 'var(--muted)', fontSize: '0.92rem', lineHeight: 1.55, display: 'grid', gap: '0.65rem' }}>
+                  <p style={{ margin: 0 }}>
+                    This feature checks profiles through X using your current browser session. Use it at your own risk: X can change internals, rate-limit requests, or return incomplete data.
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    IAmNotYourFan does not collect or send your credentials to our servers. Temporary X session headers used for this scan stay in your browser/localStorage so the code can make local requests, and you can audit the implementation in the public repo.
+                  </p>
+                  <p style={{ margin: 0, color: 'var(--text)' }}>
+                    This will mark accounts inactive when their last visible API activity is older than <strong>{inactivityMonthCount}</strong> months.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
+                  <button onClick={() => setIsActivityConfirmOpen(false)} class="btn btn-secondary" style={{ padding: '0.65rem 0.9rem', fontSize: '0.86rem' }}>
+                    Cancel
+                  </button>
+                  <button onClick={confirmActivityScan} class="btn btn-primary" style={{ padding: '0.65rem 0.9rem', fontSize: '0.86rem' }}>
+                    I understand, start scan
+                  </button>
+                </div>
               </div>
             </div>
           )}

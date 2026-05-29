@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>IAmNotYourFan — Find who doesn’t follow you back on X</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Find the accounts you follow on X that don't follow you back — in a beautiful, full-screen UI. Paste one script into your console.">
+  <meta name="description" content="Find the accounts you follow on X that don't follow you back — in a beautiful, full-screen UI. Runs locally in your browser.">
   <style>
     :root {
       --amber: #e0a33a;
@@ -121,6 +121,7 @@
         <span class="badge">⚡ Vite</span>
         <span class="badge">🟦 TypeScript</span>
         <span class="badge teal">🔒 100% local</span>
+        <span class="badge teal">No credential collection</span>
         <span class="badge green">No tracking</span>
       </div>
 
@@ -141,8 +142,16 @@
         <div class="feature"><div class="icon">📊</div><h3>Live stats</h3><p>Following total, fans, and besties at a glance.</p></div>
         <div class="feature"><div class="icon">🔎</div><h3>Search &amp; filter</h3><p>Narrow by handle or name; toggle All / Fans / Besties.</p></div>
         <div class="feature"><div class="icon">🖱️</div><h3>Clickable cards</h3><p>Jump straight to any profile in a new tab.</p></div>
-        <div class="feature"><div class="icon">🔒</div><h3>Local only</h3><p>Runs entirely in your browser. Nothing is uploaded.</p></div>
+        <div class="feature"><div class="icon">🔒</div><h3>Local only</h3><p>Runs in your browser. We do not collect or send your credentials to our servers.</p></div>
       </div>
+    </section>
+
+    <!-- Privacy -->
+    <section>
+      <h2>🔐 Privacy &amp; credentials</h2>
+      <p class="note">
+        <strong>We do not collect, store, or transmit your X credentials to our servers.</strong> The script runs locally in your browser on X. The experimental inactive-account scan may temporarily keep X session headers in your own browser localStorage so it can make local requests with your existing X session. You can audit the code in the public GitHub repo and clear localStorage at any time.
+      </p>
     </section>
 
     <!-- How to use -->
@@ -156,7 +165,7 @@
         <li>Watch the live counter, then explore your dashboard. 🎬</li>
       </ol>
       <p style="margin-top:1.25rem;" class="note">
-        <strong>How it works:</strong> the script scrolls your original Following page in the background to reliably collect hundreds of accounts, then does a clean full-page takeover and opens the IAmNotYourFan dashboard with your real data. Tested on accounts with 950+ following.
+        <strong>How it works:</strong> the script scrolls your original Following page in the background to reliably collect hundreds of accounts, then does a clean full-page takeover and opens the IAmNotYourFan dashboard with your real data. The optional inactive scan is experimental and uses your current browser session locally.
       </p>
     </section>
 
@@ -164,7 +173,7 @@
       Inspired by <a href="https://github.com/davidarroyo1234/InstagramUnfollowers" target="_blank" rel="noopener">InstagramUnfollowers</a>.
       &nbsp;•&nbsp; MIT &copy; <a href="https://x.com/0xKoller" target="_blank" rel="noopener">0xKoller</a>
       <br><br>
-      <span style="font-size:0.78rem; opacity:0.7;">This page uses cookieless analytics (no personal data) to count visits and copies. The console script itself sends nothing — your X data never leaves your browser.</span>
+      <span style="font-size:0.78rem; opacity:0.7;">This page uses cookieless analytics (no personal data) to count visits and copies. The console script does not send your X credentials to us; any temporary inactive-scan session headers stay in your browser.</span>
     </footer>
   </div>
 
