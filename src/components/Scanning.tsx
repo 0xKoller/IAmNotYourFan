@@ -487,11 +487,14 @@ export function Scanning({
                 boxShadow: 'var(--shadow-2)',
               }}>
                 <div id="activity-confirm-title" style={{ color: 'var(--amber)', fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.55rem' }}>
-                  Experimental inactive scan
+                  Extremely experimental inactive scan
                 </div>
                 <div style={{ color: 'var(--muted)', fontSize: '0.92rem', lineHeight: 1.55, display: 'grid', gap: '0.65rem' }}>
                   <p style={{ margin: 0 }}>
-                    This feature checks profiles through X using your current browser session. Use it at your own risk: X can change internals, rate-limit requests, or return incomplete data.
+                    This feature checks profiles through X using your current browser session. Use it at your own risk: X can change internals, rate-limit requests, temporarily restrict profile loading, or stop returning data during the scan.
+                  </p>
+                  <p style={{ margin: 0, color: 'var(--rose)', fontWeight: 700 }}>
+                    On some accounts, X may temporarily block or throttle profile checks after repeated scans. If profiles stop loading, pause and come back later.
                   </p>
                   <p style={{ margin: 0 }}>
                     IAmNotYourFan does not collect or send your credentials to our servers. Temporary X session headers used for this scan stay in your browser/localStorage so the code can make local requests, and you can audit the implementation in the public repo.

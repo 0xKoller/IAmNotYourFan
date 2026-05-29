@@ -150,7 +150,7 @@
     <section>
       <h2>🔐 Privacy &amp; credentials</h2>
       <p class="note">
-        <strong>We do not collect, store, or transmit your X credentials to our servers.</strong> The script runs locally in your browser on X. The experimental inactive-account scan may temporarily keep X session headers in your own browser localStorage so it can make local requests with your existing X session. You can audit the code in the public GitHub repo and clear localStorage at any time.
+        <strong>We do not collect, store, or transmit your X credentials to our servers.</strong> The script runs locally in your browser on X. The inactive-account scan is extremely experimental: X may rate-limit requests, temporarily restrict profile loading, or stop returning data after repeated checks. Temporary X session headers may stay in your own browser localStorage so the scan can make local requests with your existing X session. You can audit the code in the public GitHub repo and clear localStorage at any time.
       </p>
     </section>
 
@@ -165,7 +165,7 @@
         <li>Watch the live counter, then explore your dashboard. 🎬</li>
       </ol>
       <p style="margin-top:1.25rem;" class="note">
-        <strong>How it works:</strong> the script scrolls your original Following page in the background to reliably collect hundreds of accounts, then does a clean full-page takeover and opens the IAmNotYourFan dashboard with your real data. The optional inactive scan is experimental and uses your current browser session locally.
+        <strong>How it works:</strong> the script scrolls your original Following page in the background to reliably collect hundreds of accounts, then does a clean full-page takeover and opens the IAmNotYourFan dashboard with your real data. The optional inactive scan is extremely experimental, uses your current browser session locally, and can trigger temporary X throttling on profile checks.
       </p>
     </section>
 
