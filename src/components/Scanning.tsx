@@ -14,6 +14,8 @@ interface ScanningProps {
   onClearActivityResults: () => void;
 }
 
+type SortMode = 'fans-first' | 'besties-first' | 'az' | 'za';
+
 export function Scanning({
   state,
   onUpdateState,
@@ -27,7 +29,7 @@ export function Scanning({
   const [searchTerm, setSearchTerm] = useState(state.searchTerm || '');
   const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('all');
   const [activityFilter, setActivityFilter] = useState<'any' | 'inactive' | 'active' | 'unknown'>('any');
-  const [sortDirection, setSortDirection] = useState<'az' | 'za'>('az');
+  const [sortMode, setSortMode] = useState<SortMode>('fans-first');
   const [inactivityMonths, setInactivityMonths] = useState('6');
   const [isActivityConfirmOpen, setIsActivityConfirmOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,9 +63,10 @@ export function Scanning({
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    if (filterType === 'all' && a.isMutual !== b.isMutual) return a.isMutual ? 1 : -1;
+    if (sortMode === 'fans-first' && a.isMutual !== b.isMutual) return a.isMutual ? 1 : -1;
+    if (sortMode === 'besties-first' && a.isMutual !== b.isMutual) return a.isMutual ? -1 : 1;
     const byUsername = a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
-    return sortDirection === 'az' ? byUsername : -byUsername;
+    return sortMode === 'za' ? -byUsername : byUsername;
   });
 
   // Pagination
@@ -378,24 +381,27 @@ export function Scanning({
 
             <div style={{ display: 'grid', gap: '0.4rem' }}>
               <div style={{ color: 'var(--muted)', fontSize: '0.8rem', fontWeight: 700 }}>Sort</div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {(['az', 'za'] as const).map(direction => (
-                  <button
-                    key={direction}
-                    onClick={() => { setSortDirection(direction); setCurrentPage(1); }}
-                    class="btn"
-                    style={{
-                      padding: '8px 12px',
-                      fontSize: '0.8rem',
-                      background: sortDirection === direction ? 'var(--amber)' : 'rgba(255,255,255,0.06)',
-                      color: sortDirection === direction ? '#1c0d0b' : 'var(--text)',
-                      border: '1px solid var(--line)'
-                    }}
-                  >
-                    {direction === 'az' ? 'A-Z' : 'Z-A'}
-                  </button>
-                ))}
-              </div>
+              <select
+                value={sortMode}
+                onChange={(e) => { setSortMode((e.target as HTMLSelectElement).value as SortMode); setCurrentPage(1); }}
+                style={{
+                  minHeight: '36px',
+                  minWidth: '180px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--line)',
+                  color: 'var(--text)',
+                  borderRadius: '8px',
+                  padding: '0 0.75rem',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-sans)',
+                }}
+              >
+                <option value="fans-first">You are a fan → Besties</option>
+                <option value="besties-first">Besties → You are a fan</option>
+                <option value="az">A-Z</option>
+                <option value="za">Z-A</option>
+              </select>
             </div>
           </div>
 
