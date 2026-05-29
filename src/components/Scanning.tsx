@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import type { ComponentChildren } from 'preact';
-import type { State } from '../model/state';
+import type { State, Timings } from '../model/state';
 import type { XUser } from '../model/user';
 
 interface ScanningProps {
@@ -12,6 +12,13 @@ interface ScanningProps {
   onReopenActivityHelper: () => void;
   onStopActivityScan: () => void;
   onClearActivityResults: () => void;
+  onUnfollowSingle: (user: XUser) => void;
+  onStartMassUnfollow: (users: readonly XUser[]) => void;
+  onPauseUnfollowRun: () => void;
+  onResumeUnfollowRun: () => void;
+  onStopUnfollowRun: () => void;
+  onClearUnfollowResults: () => void;
+  timings: Timings;
 }
 
 type SortMode = 'fans-first' | 'besties-first' | 'az' | 'za';
@@ -25,6 +32,13 @@ export function Scanning({
   onReopenActivityHelper,
   onStopActivityScan,
   onClearActivityResults,
+  onUnfollowSingle,
+  onStartMassUnfollow,
+  onPauseUnfollowRun,
+  onResumeUnfollowRun,
+  onStopUnfollowRun,
+  onClearUnfollowResults,
+  timings,
 }: ScanningProps) {
   const [searchTerm, setSearchTerm] = useState(state.searchTerm || '');
   const [filterType, setFilterType] = useState<'all' | 'non-reciprocal' | 'mutuals'>('all');
@@ -32,6 +46,8 @@ export function Scanning({
   const [sortMode, setSortMode] = useState<SortMode>('fans-first');
   const [inactivityMonths, setInactivityMonths] = useState('6');
   const [isActivityConfirmOpen, setIsActivityConfirmOpen] = useState(false);
+  const [isMassUnfollowConfirmOpen, setIsMassUnfollowConfirmOpen] = useState(false);
+  const [singleConfirmUsername, setSingleConfirmUsername] = useState<string | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 50;
 
@@ -80,6 +96,12 @@ export function Scanning({
   const activeTotal = state.users.filter(u => u.activityStatus === 'active').length;
   const unknownTotal = state.users.filter(u => u.activityStatus === 'unknown').length;
   const checkedTotal = inactiveTotal + activeTotal + unknownTotal;
+  const unfollowedTotal = state.users.filter(u => u.unfollowStatus === 'unfollowed').length;
+  const selectedUsernames = new Set(state.selected.map(user => user.username));
+  const selectedUsers = state.selected
+    .map(selected => state.users.find(user => user.username === selected.username))
+    .filter((user): user is XUser => Boolean(user && user.unfollowStatus !== 'unfollowed'));
+  const selectedRunnableUsers = selectedUsers.slice(0, timings.unfollowMaxPerRun);
   const currentAccount = state.currentAccount;
   const inactivityMonthCount = Number(inactivityMonths);
   const canStartActivityScan = Number.isInteger(inactivityMonthCount) && inactivityMonthCount > 0;
@@ -94,6 +116,44 @@ export function Scanning({
     if (!canStartActivityScan) return;
     setIsActivityConfirmOpen(false);
     onStartActivityScan(inactivityMonthCount);
+  };
+
+  const setSelectedUsers = (users: readonly XUser[]) => {
+    const deduped = Array.from(new Map(users.map(user => [user.username, user])).values());
+    onUpdateState({ selected: deduped });
+  };
+
+  const toggleSelected = (user: XUser, checked: boolean) => {
+    if (checked) {
+      setSelectedUsers([...state.selected, user]);
+    } else {
+      setSelectedUsers(state.selected.filter(selected => selected.username !== user.username));
+    }
+  };
+
+  const selectPage = () => {
+    setSelectedUsers([...state.selected, ...paginated.filter(user => user.unfollowStatus !== 'unfollowed')]);
+  };
+
+  const selectAllFiltered = () => {
+    setSelectedUsers([...state.selected, ...sorted.filter(user => user.unfollowStatus !== 'unfollowed')]);
+  };
+
+  const clearSelection = () => setSelectedUsers([]);
+
+  const confirmSingleUnfollow = (user: XUser) => {
+    if (user.unfollowStatus === 'running' || user.unfollowStatus === 'unfollowed') return;
+    if (singleConfirmUsername !== user.username) {
+      setSingleConfirmUsername(user.username);
+      return;
+    }
+    setSingleConfirmUsername(undefined);
+    onUnfollowSingle(user);
+  };
+
+  const confirmMassUnfollow = () => {
+    setIsMassUnfollowConfirmOpen(false);
+    onStartMassUnfollow(selectedRunnableUsers);
   };
 
   return (
@@ -235,6 +295,16 @@ export function Scanning({
             <div style={{ fontSize: '2.1rem', fontWeight: 700, color: '#8ccf7e', lineHeight: 1 }}>
               {mutualsTotal}
             </div>
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '4px' }}>UNFOLLOWED</div>
+            <div style={{ fontSize: '2.1rem', fontWeight: 700, color: '#62d6d0', lineHeight: 1 }}>
+              {unfollowedTotal}
+            </div>
+            <button onClick={onClearUnfollowResults} class="btn btn-secondary" style={{ marginTop: '0.55rem', justifyContent: 'center', padding: '0.45rem 0.65rem', fontSize: '0.74rem', width: '100%' }}>
+              Clear unfollow marks
+            </button>
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
@@ -405,6 +475,93 @@ export function Scanning({
             </div>
           </div>
 
+          <div class="glass" style={{
+            marginBottom: '1rem',
+            padding: '1rem',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.85rem',
+            flexWrap: 'wrap',
+          }}>
+            <div>
+              <div style={{ color: 'var(--text)', fontWeight: 800, fontSize: '0.95rem' }}>
+                Selected for unfollow: {selectedUsers.length.toLocaleString()}
+              </div>
+              <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '3px' }}>
+                Mass run will process up to {timings.unfollowMaxPerRun} accounts this run, in batches of {timings.unfollowBatchSize}.
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button onClick={selectPage} class="btn btn-secondary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem' }}>
+                Select page
+              </button>
+              <button onClick={selectAllFiltered} class="btn btn-secondary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem' }}>
+                Select filtered
+              </button>
+              <button onClick={clearSelection} class="btn btn-secondary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.78rem' }}>
+                Clear
+              </button>
+              <button
+                onClick={() => selectedUsers.length > 0 && setIsMassUnfollowConfirmOpen(true)}
+                disabled={selectedUsers.length === 0 || state.unfollowRun?.status === 'running'}
+                class="btn btn-primary"
+                style={{
+                  padding: '0.5rem 0.85rem',
+                  fontSize: '0.78rem',
+                  opacity: selectedUsers.length === 0 || state.unfollowRun?.status === 'running' ? 0.55 : 1,
+                  cursor: selectedUsers.length === 0 || state.unfollowRun?.status === 'running' ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Mass unfollow selected
+              </button>
+            </div>
+          </div>
+
+          {state.unfollowRun && (
+            <div class="glass" style={{
+              marginBottom: '1rem',
+              padding: '1rem',
+              borderRadius: '14px',
+              border: '1px solid rgba(239,106,98,0.24)',
+              background: 'rgba(239,106,98,0.055)',
+              display: 'grid',
+              gap: '0.75rem',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ color: '#ef6a62', fontWeight: 800, fontSize: '0.95rem' }}>Slow unfollow run</div>
+                  <div style={{ color: 'var(--muted)', fontSize: '0.78rem', marginTop: '3px' }}>
+                    {state.unfollowRun.message || 'Ready'}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  {state.unfollowRun.status === 'running' && (
+                    <button onClick={onPauseUnfollowRun} class="btn btn-secondary" style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}>Pause</button>
+                  )}
+                  {state.unfollowRun.status === 'paused' && (
+                    <button onClick={onResumeUnfollowRun} class="btn btn-primary" style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}>Resume</button>
+                  )}
+                  {state.unfollowRun.status !== 'done' && (
+                    <button onClick={onStopUnfollowRun} class="btn btn-secondary" style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}>Stop</button>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
+                <ActivityMetric label="Completed" value={`${state.unfollowRun.completed} of ${state.unfollowRun.total}`} tone="#62d6d0" />
+                <ActivityMetric label="Failed" value={state.unfollowRun.failed.toString()} tone="#ef6a62" />
+                <ActivityMetric label="Batch" value={`${state.unfollowRun.batchIndex}/${state.unfollowRun.totalBatches}`} tone="var(--amber)" />
+                <ActivityMetric label="Next delay" value={formatDelay(state.unfollowRun.nextDelayMs)} />
+              </div>
+              {state.unfollowRun.currentUsername && (
+                <div style={{ color: 'var(--muted)', fontSize: '0.78rem' }}>
+                  Current account: <span style={{ color: '#62d6d0' }}>@{state.unfollowRun.currentUsername}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {state.activityScan && (
             <div class="glass" style={{
               marginBottom: '1rem',
@@ -515,6 +672,55 @@ export function Scanning({
             </div>
           )}
 
+          {isMassUnfollowConfirmOpen && (
+            <div style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 310,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '1rem',
+              background: 'rgba(0,0,0,0.68)',
+              backdropFilter: 'blur(8px)',
+            }}>
+              <div class="glass" role="dialog" aria-modal="true" aria-labelledby="unfollow-confirm-title" style={{
+                width: 'min(560px, 100%)',
+                borderRadius: '18px',
+                padding: '1.35rem',
+                boxShadow: 'var(--shadow-2)',
+              }}>
+                <div id="unfollow-confirm-title" style={{ color: '#ef6a62', fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.55rem' }}>
+                  Confirm slow mass unfollow
+                </div>
+                <div style={{ color: 'var(--muted)', fontSize: '0.92rem', lineHeight: 1.55, display: 'grid', gap: '0.65rem' }}>
+                  <p style={{ margin: 0 }}>
+                    This will unfollow <strong style={{ color: 'var(--text)' }}>{selectedRunnableUsers.length}</strong> selected account{selectedRunnableUsers.length === 1 ? '' : 's'} using your current X browser session.
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    Timing: batches of <strong>{timings.unfollowBatchSize}</strong>, random <strong>{formatDelay(timings.unfollowMinDelayMs)}-{formatDelay(timings.unfollowMaxDelayMs)}</strong> between accounts, and random <strong>{formatDelay(timings.unfollowMinBatchDelayMs)}-{formatDelay(timings.unfollowMaxBatchDelayMs)}</strong> between batches.
+                  </p>
+                  <p style={{ margin: 0, color: '#ef6a62', fontWeight: 800 }}>
+                    Random delays reduce burstiness, but they cannot guarantee X will not throttle, restrict, or lock your account. Use at your own risk.
+                  </p>
+                  {selectedUsers.length > selectedRunnableUsers.length && (
+                    <p style={{ margin: 0, color: 'var(--amber)' }}>
+                      {selectedUsers.length - selectedRunnableUsers.length} selected account{selectedUsers.length - selectedRunnableUsers.length === 1 ? '' : 's'} will wait for a later run because max per run is {timings.unfollowMaxPerRun}.
+                    </p>
+                  )}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.7rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
+                  <button onClick={() => setIsMassUnfollowConfirmOpen(false)} class="btn btn-secondary" style={{ padding: '0.65rem 0.9rem', fontSize: '0.86rem' }}>
+                    Cancel
+                  </button>
+                  <button onClick={confirmMassUnfollow} class="btn btn-primary" style={{ padding: '0.65rem 0.9rem', fontSize: '0.86rem' }}>
+                    I understand, start unfollow
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* User Cards Grid */}
           <div style={{
             display: 'grid',
@@ -539,15 +745,27 @@ export function Scanning({
 
             {paginated.map(user => {
               const openProfile = () => window.open(user.profileUrl, '_blank');
+              const isSelected = selectedUsernames.has(user.username);
+              const isUnfollowed = user.unfollowStatus === 'unfollowed';
+              const isUnfollowRunning = user.unfollowStatus === 'running';
+              const canSelect = !isUnfollowed && !isUnfollowRunning;
 
               return (
                 <div
                   key={user.username}
-                  class="result-card glass"
-                  onClick={openProfile}
-                  style={{ cursor: 'pointer' }}
+                  class={`result-card glass${isSelected ? ' result-card-selected' : ''}`}
+                  onClick={() => canSelect && toggleSelected(user, !isSelected)}
+                  role="button"
+                  aria-pressed={isSelected}
+                  tabIndex={canSelect ? 0 : -1}
+                  onKeyDown={(event) => {
+                    if (!canSelect || (event.key !== 'Enter' && event.key !== ' ')) return;
+                    event.preventDefault();
+                    toggleSelected(user, !isSelected);
+                  }}
+                  style={{ cursor: canSelect ? 'pointer' : 'default', opacity: isUnfollowed ? 0.68 : 1 }}
                 >
-                  <div>
+                  <div style={{ position: 'relative' }}>
                     {user.avatarUrl ? (
                       <img src={user.avatarUrl} width="46" height="46" alt="" />
                     ) : (
@@ -559,6 +777,25 @@ export function Scanning({
                         {user.username[0]}
                       </div>
                     )}
+                    <span style={{
+                      position: 'absolute',
+                      left: '-2px',
+                      bottom: '-2px',
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '6px',
+                      border: `2px solid ${isSelected ? '#62d6d0' : 'rgba(255,255,255,0.34)'}`,
+                      background: isSelected ? '#62d6d0' : 'rgba(18,18,18,0.9)',
+                      boxShadow: '0 0 0 3px rgba(18,18,18,0.88)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#071414',
+                      fontSize: '0.72rem',
+                      fontWeight: 900,
+                    }} aria-hidden="true">
+                      {isSelected ? '✓' : ''}
+                    </span>
                   </div>
 
                   <div style={{ minWidth: 0, flex: 1 }}>
@@ -566,8 +803,8 @@ export function Scanning({
                       <div style={{ fontWeight: 600, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: '1 1 auto' }}>
                         {user.displayName || user.username}
                       </div>
-                      {user.activityStatus && (
-                        <span style={{
+                        {user.activityStatus && (
+                          <span style={{
                           display: 'inline-flex',
                           alignItems: 'center',
                           borderRadius: '999px',
@@ -579,21 +816,77 @@ export function Scanning({
                           whiteSpace: 'nowrap',
                           flexShrink: 0,
                         }}>
-                          {activityLabel(user)}
-                        </span>
-                      )}
-                    </div>
+                            {activityLabel(user)}
+                          </span>
+                        )}
+                        {user.unfollowStatus && (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            borderRadius: '999px',
+                            border: '1px solid var(--line)',
+                            padding: '2px 7px',
+                            fontSize: '0.68rem',
+                            color: unfollowColor(user),
+                            background: 'rgba(255,255,255,0.05)',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                          }}>
+                            {unfollowLabel(user)}
+                          </span>
+                        )}
+                      </div>
                     <div style={{ color: '#62d6d0', fontSize: '0.78rem' }}>
                       @{user.username}
                     </div>
 
-                    <div style={{ marginTop: '4px', fontSize: '0.75rem' }}>
-                      {!user.isMutual ? (
-                        <span style={{ color: '#ef6a62', fontWeight: 600 }}>You are a fan</span>
-                      ) : (
-                        <span style={{ color: '#8ccf7e' }}>Bestie</span>
-                      )}
+                    <div style={{ marginTop: '0.55rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: '0.75rem' }}>
+                        {!user.isMutual ? (
+                          <span style={{ color: '#ef6a62', fontWeight: 700 }}>You are a fan</span>
+                        ) : (
+                          <span style={{ color: '#8ccf7e', fontWeight: 700 }}>Bestie</span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openProfile();
+                          }}
+                          class="btn btn-secondary"
+                          style={{ padding: '0.42rem 0.65rem', fontSize: '0.74rem' }}
+                        >
+                          Visit profile
+                        </button>
+
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            confirmSingleUnfollow(user);
+                          }}
+                          disabled={isUnfollowed || isUnfollowRunning}
+                          class="btn btn-secondary"
+                          style={{
+                            padding: '0.42rem 0.65rem',
+                            fontSize: '0.74rem',
+                            color: singleConfirmUsername === user.username ? '#1c0d0b' : 'var(--text)',
+                            background: singleConfirmUsername === user.username ? '#ef6a62' : 'rgba(255,255,255,0.06)',
+                            opacity: isUnfollowed || isUnfollowRunning ? 0.55 : 1,
+                            cursor: isUnfollowed || isUnfollowRunning ? 'not-allowed' : 'pointer',
+                          }}
+                        >
+                          {isUnfollowed ? 'Unfollowed' : isUnfollowRunning ? 'Unfollowing...' : singleConfirmUsername === user.username ? 'Confirm' : 'Unfollow'}
+                        </button>
+                      </div>
                     </div>
+
+                    {user.unfollowStatus === 'failed' && user.unfollowError && (
+                      <div style={{ marginTop: '4px', color: '#ef6a62', fontSize: '0.72rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {user.unfollowError}
+                      </div>
+                    )}
 
                   </div>
                 </div>
@@ -786,6 +1079,12 @@ function formatEta(seconds?: number) {
   return `${minutes}m ${remainingSeconds}s`;
 }
 
+function formatDelay(ms?: number) {
+  if (!ms) return '—';
+  if (ms < 1000) return `${ms}ms`;
+  return `${Math.round(ms / 1000)}s`;
+}
+
 function activityColor(user: XUser) {
   if (user.activityStatus === 'inactive') return '#f2b84b';
   if (user.activityStatus === 'active') return '#8ccf7e';
@@ -795,6 +1094,20 @@ function activityColor(user: XUser) {
 function activityLabel(user: XUser) {
   if (user.activityStatus === 'unknown') return 'Unknown activity';
   return `${user.activityStatus === 'inactive' ? 'Inactive' : 'Active'}: ${formatActivityDate(user.lastActivityAt)}`;
+}
+
+function unfollowColor(user: XUser) {
+  if (user.unfollowStatus === 'unfollowed') return '#62d6d0';
+  if (user.unfollowStatus === 'failed') return '#ef6a62';
+  if (user.unfollowStatus === 'running') return 'var(--amber)';
+  return 'var(--muted)';
+}
+
+function unfollowLabel(user: XUser) {
+  if (user.unfollowStatus === 'unfollowed') return 'Unfollowed';
+  if (user.unfollowStatus === 'failed') return 'Unfollow failed';
+  if (user.unfollowStatus === 'running') return 'Unfollowing';
+  return 'Pending unfollow';
 }
 
 function formatActivityDate(value?: string) {

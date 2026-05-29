@@ -12,6 +12,12 @@ export type Timings = {
   minDelayMs: number;
   maxDelayMs: number;
   maxProfilesPerRun: number;
+  unfollowBatchSize: number;
+  unfollowMinDelayMs: number;
+  unfollowMaxDelayMs: number;
+  unfollowMinBatchDelayMs: number;
+  unfollowMaxBatchDelayMs: number;
+  unfollowMaxPerRun: number;
 };
 
 export type ScanningState = {
@@ -26,6 +32,7 @@ export type ScanningState = {
   readonly currentAccount?: CurrentAccount;
   readonly isOverlay?: boolean;        // true when we're overlaying on the real X page during collection
   readonly activityScan?: ActivityScanState;
+  readonly unfollowRun?: UnfollowRunState;
 };
 
 export type ActivityScanState = {
@@ -41,6 +48,18 @@ export type ActivityScanState = {
   readonly message?: string;
 };
 
+export type UnfollowRunState = {
+  readonly status: 'idle' | 'running' | 'paused' | 'done';
+  readonly completed: number;
+  readonly failed: number;
+  readonly total: number;
+  readonly currentUsername?: string;
+  readonly batchIndex: number;
+  readonly totalBatches: number;
+  readonly nextDelayMs?: number;
+  readonly message?: string;
+};
+
 export type State =
   | { readonly status: 'initial' }
   | ScanningState
@@ -50,6 +69,12 @@ export const DEFAULT_TIMINGS: Timings = {
   minDelayMs: 800,
   maxDelayMs: 1800,
   maxProfilesPerRun: 300,
+  unfollowBatchSize: 10,
+  unfollowMinDelayMs: 2000,
+  unfollowMaxDelayMs: 10000,
+  unfollowMinBatchDelayMs: 5000,
+  unfollowMaxBatchDelayMs: 45000,
+  unfollowMaxPerRun: 50,
 };
 
 export const DEFAULT_FILTER: Filter = {

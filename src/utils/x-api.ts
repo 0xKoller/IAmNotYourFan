@@ -21,6 +21,13 @@ type TimelineItem = {
   tweetId?: string;
 };
 
+export type XUnfollowResult = {
+  ok: boolean;
+  status?: number;
+  hardThrottle?: boolean;
+  error?: string;
+};
+
 const FALLBACK_WEB_BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCO9T0qGgS8xo7g7dTs%3D9hWQJPdG7wWJFzPj4nJYq0CdnIo0E4bJk4lZ8CqK6GZf8V8w';
 const OPERATION_STORAGE_KEY = 'iamnotyourfan.xGraphqlOperations.v1';
 const SCRIPT_URL_STORAGE_KEY = 'iamnotyourfan.xScriptUrls.v1';
@@ -145,6 +152,59 @@ export async function checkActivityViaXApi(username: string, inactivityMonths: n
     activityCheckedAt: new Date().toISOString(),
     activityReason: `${latest.isRepost ? 'Latest API activity is a repost' : 'Latest API activity is a post'}; inactive after ${inactivityMonths} months`,
   };
+}
+
+export async function unfollowUserViaXApi(username: string): Promise<XUnfollowResult> {
+  if (!isOnXOrigin()) {
+    return { ok: false, error: 'Unfollow only works when running on x.com or twitter.com.' };
+  }
+
+  const operations = await discoverOperationIds();
+  if (!operations.userByScreenName) {
+    return { ok: false, error: 'Could not find X user lookup operation. Refresh X and try again.' };
+  }
+
+  const bearerToken = operations.bearerToken || FALLBACK_WEB_BEARER_TOKEN;
+  const userId = await fetchUserId(username, operations.userByScreenName, bearerToken);
+  if (!userId) {
+    return { ok: false, error: 'X could not resolve this username.' };
+  }
+
+  const captured = readCapturedAuthHeaders();
+  const authorization = captured.authorization || `Bearer ${bearerToken}`;
+  const csrfToken = captured.xCsrfToken || getCookie('ct0');
+  const body = new URLSearchParams({ user_id: userId });
+
+  try {
+    const response = await fetch(new URL('/i/api/1.1/friendships/destroy.json', location.origin).toString(), {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        authorization,
+        'content-type': 'application/x-www-form-urlencoded',
+        'x-csrf-token': csrfToken,
+        'x-twitter-active-user': captured.xTwitterActiveUser || 'yes',
+        'x-twitter-auth-type': captured.xTwitterAuthType || 'OAuth2Session',
+        'x-twitter-client-language': captured.xTwitterClientLanguage || 'en',
+      },
+      body,
+    });
+
+    if (response.ok) return { ok: true, status: response.status };
+
+    const text = await response.text().catch(() => '');
+    return {
+      ok: false,
+      status: response.status,
+      hardThrottle: response.status === 403 || response.status === 429,
+      error: text.slice(0, 220) || `X returned HTTP ${response.status}`,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Network error while unfollowing.',
+    };
+  }
 }
 
 async function fetchUserId(username: string, queryId: string, bearerToken: string): Promise<string | null> {

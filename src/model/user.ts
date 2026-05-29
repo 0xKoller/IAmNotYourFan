@@ -11,6 +11,10 @@ export type XUser = {
   lastActivityAt?: string;    // ISO date from the latest non-pinned post/repost we can trust
   activityCheckedAt?: string; // ISO timestamp for local resume/freshness checks
   activityReason?: string;
+  unfollowStatus?: 'pending' | 'running' | 'unfollowed' | 'failed';
+  unfollowedAt?: string;      // ISO timestamp from the successful local unfollow action
+  unfollowCheckedAt?: string; // ISO timestamp for saved success/failure state
+  unfollowError?: string;
   rawCellHtml?: string;       // for debugging when selectors break
 };
 
