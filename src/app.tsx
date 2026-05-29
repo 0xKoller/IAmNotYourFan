@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { NotSearching } from './components/NotSearching';
 import { Scanning } from './components/Scanning';
 import { SettingsModal } from './components/SettingsModal';
@@ -6,6 +6,13 @@ import { type State, DEFAULT_FILTER, DEFAULT_TIMINGS } from './model/state';
 import type { XUser } from './model/user';
 import { collectVisibleUsers, isOnFollowingPage } from './utils/x-selectors';
 import { autoScrollFollowingList } from './utils/auto-scroll';
+import {
+  applyActivityResult,
+  clearSavedActivityResults,
+  createActivityScan,
+  mergeSavedActivity,
+  type ActivityScanController,
+} from './utils/activity-scan';
 
 // Development helper — generates realistic fake users
 function generateFakeUsers(count: number): XUser[] {
@@ -30,11 +37,22 @@ export function App() {
   const [state, setState] = useState<State>({ status: 'initial' });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [timings, setTimings] = useState(DEFAULT_TIMINGS);
+  const activityScanRef = useRef<ActivityScanController | null>(null);
 
   const updateScanningState = (patch: Partial<Extract<State, { status: 'scanning' }>>) => {
-    if (state.status === 'scanning') {
-      setState({ ...state, ...patch });
-    }
+    setState(current => current.status === 'scanning' ? { ...current, ...patch } : current);
+  };
+
+  const updateUsersWithActivityResult = (result: Parameters<typeof applyActivityResult>[1]) => {
+    setState(current => {
+      if (current.status !== 'scanning') return current;
+      return {
+        ...current,
+        users: current.users.map(user =>
+          user.username === result.username ? applyActivityResult(user, result) : user
+        ),
+      };
+    });
   };
 
   // Expose settings opener for the gear button in Scanning toolbar
@@ -74,7 +92,7 @@ export function App() {
           const baseState = {
             status: 'scanning' as const,
             progress: initialUsers.length > 0 ? Math.min(40, Math.round((initialUsers.length / 300) * 100)) : 0,
-            users: initialUsers,
+            users: mergeSavedActivity(initialUsers),
             selected: [],
             filter: DEFAULT_FILTER,
             searchTerm: '',
@@ -85,10 +103,13 @@ export function App() {
 
           setState(baseState);
 
-          // Continue harvesting from the original X page (only possible in overlay mode)
-          if (initialUsers.length > 0 || isOverlay) {
+          // Continue harvesting only while the original X DOM still exists.
+          // In the normal console flow main.ts already completed collection,
+          // then replaced the page with this dashboard; scanning again there
+          // would read the dashboard DOM and overwrite the real following list.
+          if (isOverlay) {
             continueRealScanInBackground();
-          } else {
+          } else if (initialUsers.length === 0) {
             handleStartScan();
           }
         }
@@ -104,7 +125,7 @@ export function App() {
 
     // Never use fake data when running as a real console script (pasted on x.com)
     if (isLocalhost && !isConsoleBuild) {
-      const fakeUsers = generateFakeUsers(87);
+      const fakeUsers = mergeSavedActivity(generateFakeUsers(87));
       setState({
         status: 'scanning',
         progress: 100,
@@ -140,14 +161,14 @@ export function App() {
       
       // Real auto-scroll + collection with live updates
       await autoScrollFollowingList((progress) => {
-        const currentUsers = collectVisibleUsers();
+        const currentUsers = mergeSavedActivity(collectVisibleUsers());
         updateScanningState({
           progress: Math.min(95, Math.round((progress.usersFound / 600) * 100)),
           users: currentUsers,
         });
       }, { maxScrolls: 120, waitBetweenScrolls: 580 });
 
-      const finalUsers = collectVisibleUsers();
+      const finalUsers = mergeSavedActivity(collectVisibleUsers());
       updateScanningState({
         progress: 100,
         users: finalUsers,
@@ -164,28 +185,98 @@ export function App() {
   const continueRealScanInBackground = async () => {
     try {
       await autoScrollFollowingList(() => {
-        const currentUsers = collectVisibleUsers();
-        // Merge with existing users (avoid duplicates)
-        const existing = new Map(((state as any).users || []).map((u: XUser) => [u.username, u]));
-        currentUsers.forEach((u: XUser) => existing.set(u.username, u));
-
-        updateScanningState({
-          progress: Math.min(95, Math.round((existing.size / 600) * 100)),
-          users: Array.from(existing.values()) as XUser[],
+        const currentUsers = mergeSavedActivity(collectVisibleUsers());
+        setState(current => {
+          if (current.status !== 'scanning') return current;
+          const existing = new Map(current.users.map((u: XUser) => [u.username, u]));
+          currentUsers.forEach((u: XUser) => existing.set(u.username, u));
+          return {
+            ...current,
+            progress: Math.min(95, Math.round((existing.size / 600) * 100)),
+            users: Array.from(existing.values()) as XUser[],
+          };
         });
       }, { maxScrolls: 100, waitBetweenScrolls: 580 });
 
-      const finalUsers = collectVisibleUsers();
-      const existing = new Map(((state as any).users || []).map((u: XUser) => [u.username, u]));
-      finalUsers.forEach((u: XUser) => existing.set(u.username, u));
-
-      updateScanningState({
-        progress: 100,
-        users: Array.from(existing.values()) as XUser[],
+      const finalUsers = mergeSavedActivity(collectVisibleUsers());
+      setState(current => {
+        if (current.status !== 'scanning') return current;
+        const existing = new Map(current.users.map((u: XUser) => [u.username, u]));
+        finalUsers.forEach((u: XUser) => existing.set(u.username, u));
+        return {
+          ...current,
+          progress: 100,
+          users: Array.from(existing.values()) as XUser[],
+        };
       });
     } catch (err) {
       console.error('[IAmNotYourFan] Background collection failed:', err);
     }
+  };
+
+  const startActivityScan = () => {
+    if (state.status !== 'scanning') return;
+    activityScanRef.current?.stop();
+    const users = mergeSavedActivity(state.users);
+    updateScanningState({ users });
+
+    const controller = createActivityScan({
+      users,
+      onResult: updateUsersWithActivityResult,
+      onProgress: (progress) => {
+        updateScanningState({
+          activityScan: {
+            status: progress.status,
+            checked: progress.checked,
+            total: progress.total,
+            active: progress.active,
+            inactive: progress.inactive,
+            unknown: progress.unknown,
+            currentUsername: progress.currentUsername,
+            startedAt: progress.startedAt,
+            etaSeconds: progress.etaSeconds,
+            message: progress.message,
+          },
+        });
+      },
+      onDone: () => {
+        setState(current => {
+          if (current.status !== 'scanning') return current;
+          const scan = current.activityScan;
+          return {
+            ...current,
+            activityScan: scan ? { ...scan, status: 'done', currentUsername: undefined, etaSeconds: undefined } : scan,
+          };
+        });
+      },
+    });
+
+    activityScanRef.current = controller;
+    controller.start();
+  };
+
+  const pauseActivityScan = () => activityScanRef.current?.pause();
+  const resumeActivityScan = () => activityScanRef.current?.resume();
+  const reopenActivityHelper = () => activityScanRef.current?.reopen();
+  const stopActivityScan = () => activityScanRef.current?.stop();
+  const clearActivityResults = () => {
+    clearSavedActivityResults();
+    activityScanRef.current?.stop();
+    activityScanRef.current = null;
+    setState(current => {
+      if (current.status !== 'scanning') return current;
+      return {
+        ...current,
+        users: current.users.map(user => ({
+          ...user,
+          activityStatus: undefined,
+          lastActivityAt: undefined,
+          activityCheckedAt: undefined,
+          activityReason: undefined,
+        })),
+        activityScan: undefined,
+      };
+    });
   };
 
   if (state.status === 'initial') {
@@ -198,6 +289,12 @@ export function App() {
         <Scanning
           state={state}
           onUpdateState={updateScanningState}
+          onStartActivityScan={startActivityScan}
+          onPauseActivityScan={pauseActivityScan}
+          onResumeActivityScan={resumeActivityScan}
+          onReopenActivityHelper={reopenActivityHelper}
+          onStopActivityScan={stopActivityScan}
+          onClearActivityResults={clearActivityResults}
         />
         <SettingsModal
           isOpen={isSettingsOpen}

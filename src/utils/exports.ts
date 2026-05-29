@@ -21,13 +21,25 @@ export function exportToJSON(users: XUser[], filename = 'iamnotyourfan-nonfollow
 }
 
 export function exportToCSV(users: XUser[], filename = 'iamnotyourfan-nonfollowers.csv') {
-  const headers = ['username', 'displayName', 'profileUrl', 'isMutual', 'isVerified'];
+  const headers = [
+    'username',
+    'displayName',
+    'profileUrl',
+    'isMutual',
+    'isVerified',
+    'activityStatus',
+    'lastActivityAt',
+    'activityCheckedAt',
+  ];
   const rows = users.map(u => [
     u.username,
     u.displayName || '',
     u.profileUrl,
     u.isMutual ? 'yes' : 'no',
     u.isVerified ? 'yes' : 'no',
+    u.activityStatus || '',
+    u.lastActivityAt || '',
+    u.activityCheckedAt || '',
   ]);
 
   const csvContent = [

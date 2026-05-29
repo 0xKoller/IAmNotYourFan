@@ -101,3 +101,20 @@
 .serif {
   font-family: var(--font-serif);
 }
+
+@media (max-width: 760px) {
+  .iamnotyourfan .dashboard-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .iamnotyourfan .dashboard-sidebar {
+    position: static !important;
+    height: auto !important;
+    border-right: 0 !important;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .iamnotyourfan .dashboard-main {
+    padding: 1rem !important;
+  }
+}

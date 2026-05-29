@@ -3,6 +3,7 @@ import './styles/index.scss'
 import { App } from './app.tsx'
 import { collectVisibleUsers, isOnFollowingPage } from './utils/x-selectors'
 import { autoScrollFollowingList } from './utils/auto-scroll'
+import { installXApiRequestRecorder, snapshotXScriptUrls } from './utils/x-api'
 
 // Detect console / production paste mode (either on real X or built with --mode console)
 const isConsoleMode = 
@@ -11,6 +12,9 @@ const isConsoleMode =
    (window.location.hostname.includes('x.com') || window.location.hostname.includes('twitter.com')));
 
 if (isConsoleMode) {
+  installXApiRequestRecorder();
+  snapshotXScriptUrls();
+
   const onRealX = (window.location.hostname.includes('x.com') || window.location.hostname.includes('twitter.com'));
   const onFollowing = isOnFollowingPage();
 

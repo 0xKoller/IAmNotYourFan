@@ -24,6 +24,20 @@ export type ScanningState = {
   readonly page: number;
   readonly isPaused: boolean;
   readonly isOverlay?: boolean;        // true when we're overlaying on the real X page during collection
+  readonly activityScan?: ActivityScanState;
+};
+
+export type ActivityScanState = {
+  readonly status: 'idle' | 'running' | 'paused' | 'blocked' | 'done';
+  readonly checked: number;
+  readonly total: number;
+  readonly active: number;
+  readonly inactive: number;
+  readonly unknown: number;
+  readonly currentUsername?: string;
+  readonly startedAt?: string;
+  readonly etaSeconds?: number;
+  readonly message?: string;
 };
 
 export type State =
