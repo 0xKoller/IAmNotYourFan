@@ -108,6 +108,23 @@
   transform: translateY(-1px);
 }
 
+.scan-skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.14), rgba(255,255,255,0.06));
+  background-size: 220% 100%;
+  animation: scan-skeleton-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes scan-skeleton-pulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scan-skeleton {
+    animation: none;
+  }
+}
+
 .result-card img {
   border-radius: 50%;
   border: 1px solid var(--line);

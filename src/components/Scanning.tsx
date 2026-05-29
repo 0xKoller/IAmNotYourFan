@@ -81,6 +81,9 @@ export function Scanning({
   const currentActivityUser = state.activityScan?.currentUsername
     ? state.users.find(user => user.username === state.activityScan?.currentUsername)
     : undefined;
+  const latestActivityUser = state.users
+    .filter(user => user.activityStatus && user.activityCheckedAt)
+    .sort((a, b) => new Date(b.activityCheckedAt!).getTime() - new Date(a.activityCheckedAt!).getTime())[0];
 
   const confirmActivityScan = () => {
     if (!canStartActivityScan) return;
@@ -420,9 +423,10 @@ export function Scanning({
                   </span>
                   <span style={{ color: 'var(--muted)', fontSize: '0.82rem' }}>following profiles</span>
                 </div>
-                {state.activityScan.currentUsername && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   <CurrentScanUser user={currentActivityUser} username={state.activityScan.currentUsername} />
-                )}
+                  <LatestActivityResult user={latestActivityUser} />
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.5rem' }}>
@@ -621,10 +625,14 @@ function HeaderIconLink({ href, label, children }: { href: string; label: string
   );
 }
 
-function CurrentScanUser({ user, username }: { user?: XUser; username: string }) {
+function CurrentScanUser({ user, username }: { user?: XUser; username?: string }) {
+  const isLoading = !username;
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
-      {user?.avatarUrl ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: '210px' }}>
+      {isLoading ? (
+        <div class="scan-skeleton" style={{ width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0 }} />
+      ) : user?.avatarUrl ? (
         <img
           src={user.avatarUrl}
           width="34"
@@ -647,19 +655,82 @@ function CurrentScanUser({ user, username }: { user?: XUser; username: string })
           fontWeight: 800,
           flexShrink: 0,
         }}>
-          {username[0]?.toUpperCase()}
+          {username?.[0]?.toUpperCase()}
         </div>
       )}
       <div style={{ minWidth: 0 }}>
         <div style={{ color: 'var(--muted)', fontSize: '0.68rem', fontWeight: 700 }}>CURRENTLY CHECKING</div>
-        <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'baseline', minWidth: 0 }}>
-          {user?.displayName && (
-            <span style={{ color: 'var(--text)', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>
-              {user.displayName}
-            </span>
-          )}
-          <span style={{ color: '#62d6d0', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>@{username}</span>
+        {isLoading ? (
+          <div style={{ display: 'grid', gap: '4px', marginTop: '4px' }}>
+            <div class="scan-skeleton" style={{ width: '132px', height: '10px', borderRadius: '999px' }} />
+            <div class="scan-skeleton" style={{ width: '82px', height: '9px', borderRadius: '999px' }} />
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'baseline', minWidth: 0 }}>
+            {user?.displayName && (
+              <span style={{ color: 'var(--text)', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>
+                {user.displayName}
+              </span>
+            )}
+            <span style={{ color: '#62d6d0', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>@{username}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LatestActivityResult({ user }: { user?: XUser }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: '230px' }}>
+      {!user ? (
+        <div class="scan-skeleton" style={{ width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0 }} />
+      ) : user.avatarUrl ? (
+        <img
+          src={user.avatarUrl}
+          width="34"
+          height="34"
+          alt=""
+          style={{ borderRadius: '50%', border: '1px solid var(--line)', flexShrink: 0 }}
+        />
+      ) : (
+        <div style={{
+          width: '34px',
+          height: '34px',
+          borderRadius: '50%',
+          border: '1px solid var(--line)',
+          background: '#222',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'var(--muted)',
+          fontSize: '0.8rem',
+          fontWeight: 800,
+          flexShrink: 0,
+        }}>
+          {user.username[0]?.toUpperCase()}
         </div>
+      )}
+      <div style={{ minWidth: 0 }}>
+        <div style={{ color: 'var(--muted)', fontSize: '0.68rem', fontWeight: 700 }}>LATEST RESULT</div>
+        {!user ? (
+          <div style={{ display: 'grid', gap: '4px', marginTop: '4px' }}>
+            <div class="scan-skeleton" style={{ width: '142px', height: '10px', borderRadius: '999px' }} />
+            <div class="scan-skeleton" style={{ width: '108px', height: '9px', borderRadius: '999px' }} />
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '2px' }}>
+            <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', minWidth: 0 }}>
+              <span style={{ color: activityColor(user), fontSize: '0.82rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                {user.activityStatus === 'inactive' ? 'Inactive' : user.activityStatus === 'active' ? 'Active' : 'Unknown'}
+              </span>
+              <span style={{ color: '#62d6d0', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>@{user.username}</span>
+            </div>
+            <div style={{ color: 'var(--muted)', fontSize: '0.74rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '190px' }}>
+              Last activity: {formatActivityDate(user.lastActivityAt)}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -690,9 +761,12 @@ function activityColor(user: XUser) {
 
 function activityLabel(user: XUser) {
   if (user.activityStatus === 'unknown') return 'Unknown activity';
-  const date = user.lastActivityAt ? new Date(user.lastActivityAt) : null;
-  const formatted = date && !Number.isNaN(date.getTime())
+  return `${user.activityStatus === 'inactive' ? 'Inactive' : 'Active'}: ${formatActivityDate(user.lastActivityAt)}`;
+}
+
+function formatActivityDate(value?: string) {
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime())
     ? date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
     : 'date unknown';
-  return `${user.activityStatus === 'inactive' ? 'Inactive' : 'Active'}: ${formatted}`;
 }
