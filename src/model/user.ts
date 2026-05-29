@@ -13,3 +13,10 @@ export type XUser = {
   activityReason?: string;
   rawCellHtml?: string;       // for debugging when selectors break
 };
+
+export type CurrentAccount = {
+  username: string;           // @handle without @
+  displayName?: string;
+  avatarUrl?: string;
+  profileUrl: string;         // https://x.com/username
+};

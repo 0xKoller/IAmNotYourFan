@@ -74,6 +74,7 @@ export function Scanning({
   const unknownTotal = state.users.filter(u => u.activityStatus === 'unknown').length;
   const checkedTotal = inactiveTotal + activeTotal + unknownTotal;
   const currentExportName = `iamnotyourfan-${filterType}-${activityFilter}`;
+  const currentAccount = state.currentAccount;
 
   const handleCopy = async () => {
     await copyHandlesToClipboard(sorted as XUser[]);
@@ -119,6 +120,70 @@ export function Scanning({
           height: 'calc(100vh - 58px)',
           overflowY: 'auto',
         }}>
+          {currentAccount && (
+            <button
+              type="button"
+              onClick={() => window.open(currentAccount.profileUrl, '_blank')}
+              class="account-card"
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                marginBottom: '1.35rem',
+                padding: '0.75rem',
+                borderRadius: '12px',
+                border: '1px solid var(--line)',
+                background: 'rgba(255,255,255,0.055)',
+                color: 'var(--text)',
+                textAlign: 'left',
+                cursor: 'pointer',
+              }}
+              aria-label={`Open @${currentAccount.username} profile`}
+            >
+              {currentAccount.avatarUrl ? (
+                <img
+                  src={currentAccount.avatarUrl}
+                  width="44"
+                  height="44"
+                  alt=""
+                  style={{ borderRadius: '50%', border: '1px solid var(--line)', flexShrink: 0 }}
+                />
+              ) : (
+                <div style={{
+                  width: '44px',
+                  height: '44px',
+                  borderRadius: '50%',
+                  border: '1px solid var(--line)',
+                  background: 'linear-gradient(135deg, rgba(224,163,58,0.28), rgba(98,214,208,0.18))',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--amber)',
+                  fontWeight: 800,
+                  fontSize: '1rem',
+                  flexShrink: 0,
+                }}>
+                  {currentAccount.username[0]?.toUpperCase()}
+                </div>
+              )}
+
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: 'var(--muted)', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em', marginBottom: '2px' }}>
+                  SIGNED IN AS
+                </div>
+                {currentAccount.displayName && (
+                  <div style={{ fontSize: '0.88rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {currentAccount.displayName}
+                  </div>
+                )}
+                <div style={{ color: '#62d6d0', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  @{currentAccount.username}
+                </div>
+              </div>
+            </button>
+          )}
+
           <div style={{ marginBottom: '1.25rem' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '4px' }}>FOLLOWING</div>
             <div style={{ fontSize: '2.1rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>

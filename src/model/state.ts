@@ -1,7 +1,7 @@
 // Core application state for Iamnotyourfan
 // Strongly inspired by InstagramUnfollowers state machine
 
-import type { XUser } from './user';
+import type { CurrentAccount, XUser } from './user';
 
 export type Filter = {
   onlyNonReciprocal: boolean;
@@ -23,6 +23,7 @@ export type ScanningState = {
   readonly searchTerm: string;
   readonly page: number;
   readonly isPaused: boolean;
+  readonly currentAccount?: CurrentAccount;
   readonly isOverlay?: boolean;        // true when we're overlaying on the real X page during collection
   readonly activityScan?: ActivityScanState;
 };

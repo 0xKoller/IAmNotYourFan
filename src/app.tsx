@@ -3,8 +3,8 @@ import { NotSearching } from './components/NotSearching';
 import { Scanning } from './components/Scanning';
 import { SettingsModal } from './components/SettingsModal';
 import { type State, DEFAULT_FILTER, DEFAULT_TIMINGS } from './model/state';
-import type { XUser } from './model/user';
-import { collectVisibleUsers, isOnFollowingPage } from './utils/x-selectors';
+import type { CurrentAccount, XUser } from './model/user';
+import { collectVisibleUsers, getCurrentAccount, isOnFollowingPage } from './utils/x-selectors';
 import { autoScrollFollowingList } from './utils/auto-scroll';
 import {
   applyActivityResult,
@@ -38,6 +38,10 @@ export function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [timings, setTimings] = useState(DEFAULT_TIMINGS);
   const activityScanRef = useRef<ActivityScanController | null>(null);
+
+  const readCurrentAccount = (): CurrentAccount | undefined => {
+    return (window as any).__IAMNOTYOURFAN_CURRENT_ACCOUNT || getCurrentAccount();
+  };
 
   const updateScanningState = (patch: Partial<Extract<State, { status: 'scanning' }>>) => {
     setState(current => current.status === 'scanning' ? { ...current, ...patch } : current);
@@ -98,6 +102,7 @@ export function App() {
             searchTerm: '',
             page: 1,
             isPaused: false,
+            currentAccount: readCurrentAccount(),
             isOverlay,
           };
 
@@ -135,6 +140,12 @@ export function App() {
         searchTerm: '',
         page: 1,
         isPaused: false,
+        currentAccount: {
+          username: 'you',
+          displayName: 'Demo account',
+          avatarUrl: 'https://i.pravatar.cc/48?u=you',
+          profileUrl: 'https://x.com/you',
+        },
       });
       return;
     }
@@ -154,6 +165,7 @@ export function App() {
       searchTerm: '',
       page: 1,
       isPaused: false,
+      currentAccount: readCurrentAccount(),
     });
 
     try {

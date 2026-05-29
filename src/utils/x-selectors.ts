@@ -5,7 +5,7 @@
 //
 // Strategy: multiple layered fallbacks because X changes data-testid frequently.
 
-import type { XUser } from '../model/user';
+import type { CurrentAccount, XUser } from '../model/user';
 
 const MUTUAL_TEXT_EN = 'follows you';
 const MUTUAL_TEXT_FA = 'شما را دنبال می‌کند';
@@ -17,6 +17,55 @@ export function isOnFollowingPage(): boolean {
   } catch {
     return false;
   }
+}
+
+export function getCurrentAccount(): CurrentAccount | undefined {
+  const username = extractCurrentUsernameFromPath();
+  if (!username) return undefined;
+
+  const accountSwitcher = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
+  const profileHeader = document.querySelector('[data-testid="UserName"]');
+  const source = accountSwitcher || profileHeader || document;
+
+  return {
+    username,
+    displayName: extractCurrentDisplayName(source, username),
+    avatarUrl: extractCurrentAvatar(source, username),
+    profileUrl: `https://x.com/${username}`,
+  };
+}
+
+function extractCurrentUsernameFromPath(): string | undefined {
+  try {
+    const [username, section] = window.location.pathname.split('/').filter(Boolean);
+    if (!username || section?.toLowerCase() !== 'following') return undefined;
+    return username.toLowerCase();
+  } catch {
+    return undefined;
+  }
+}
+
+function extractCurrentDisplayName(source: Element | Document, username: string): string | undefined {
+  if (source === document) return undefined;
+
+  const textNodes = Array.from(source.querySelectorAll('div[dir="auto"] span, span'));
+  const displayName = textNodes
+    .map(el => el.textContent?.trim() || '')
+    .find(text => text && text !== `@${username}` && !text.startsWith('@'));
+
+  return displayName || undefined;
+}
+
+function extractCurrentAvatar(source: Element | Document, username: string): string | undefined {
+  if (source === document) return undefined;
+
+  const images = Array.from(source.querySelectorAll('img[src*="profile_images"]')) as HTMLImageElement[];
+  const accountImage = images.find(img => {
+    const alt = (img.alt || '').toLowerCase();
+    return alt.includes(username) || alt.includes('profile') || source !== document;
+  });
+
+  return accountImage?.src || images[0]?.src;
 }
 
 export function getUserCells(): Element[] {

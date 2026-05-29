@@ -87,6 +87,16 @@
   border-color: var(--cyan);
 }
 
+.account-card {
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.account-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(98, 214, 208, 0.42) !important;
+  background: rgba(255,255,255,0.08) !important;
+}
+
 .result-card img {
   border-radius: 50%;
   border: 1px solid var(--line);

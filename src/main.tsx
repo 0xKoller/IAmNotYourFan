@@ -1,7 +1,7 @@
 import { render } from 'preact'
 import './styles/index.scss'
 import { App } from './app.tsx'
-import { collectVisibleUsers, isOnFollowingPage } from './utils/x-selectors'
+import { collectVisibleUsers, getCurrentAccount, isOnFollowingPage } from './utils/x-selectors'
 import { autoScrollFollowingList } from './utils/auto-scroll'
 import { installXApiRequestRecorder, snapshotXScriptUrls } from './utils/x-api'
 
@@ -26,6 +26,7 @@ if (isConsoleMode) {
     // 4. When done (or user stops), do full clean takeover with all data
 
     console.log('%c[IAmNotYourFan] Real X + Following page detected — using loader + background collection mode', 'color:#e0a33a');
+    (window as any).__IAMNOTYOURFAN_CURRENT_ACCOUNT = getCurrentAccount();
 
     // Create simple full-screen loader
     const loader = document.createElement('div');
@@ -136,6 +137,7 @@ if (isConsoleMode) {
       isDone = true;
 
       const finalUsers = Array.from(collected.values());
+      const currentAccount = (window as any).__IAMNOTYOURFAN_CURRENT_ACCOUNT || getCurrentAccount();
       console.log(`[IAmNotYourFan] Collection finished. Total users: ${finalUsers.length}`);
 
       // Remove loader
@@ -150,6 +152,7 @@ if (isConsoleMode) {
 
       const root = document.getElementById('iamnotyourfan-root')!;
       (window as any).__IAMNOTYOURFAN_INITIAL_USERS = finalUsers;
+      (window as any).__IAMNOTYOURFAN_CURRENT_ACCOUNT = currentAccount;
 
       render(<App />, root);
       document.title = 'IAmNotYourFan • X Non-Followers';
