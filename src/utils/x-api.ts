@@ -25,7 +25,6 @@ const FALLBACK_WEB_BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCO9T
 const OPERATION_STORAGE_KEY = 'iamnotyourfan.xGraphqlOperations.v1';
 const SCRIPT_URL_STORAGE_KEY = 'iamnotyourfan.xScriptUrls.v1';
 const AUTH_HEADERS_STORAGE_KEY = 'iamnotyourfan.xAuthHeaders.v1';
-const DEBUG_PREFIX = '[IAmNotYourFan:XAPI]';
 let isRecorderInstalled = false;
 
 const FEATURES: Record<string, boolean | string> = {
@@ -473,6 +472,6 @@ function unknownResult(username: string, activityReason: string): ActivityResult
   };
 }
 
-function debug(message: string, details?: unknown) {
-  console.log(DEBUG_PREFIX, message, details || '');
+function debug(_message: string, _details?: unknown) {
+  // Intentionally silent in the pasteable console script.
 }

@@ -169,8 +169,6 @@ export function App() {
     });
 
     try {
-      console.log('%c[IAmNotYourFan] Starting real DOM scan on current page...', 'color:#e0a33a');
-      
       // Real auto-scroll + collection with live updates
       await autoScrollFollowingList((progress) => {
         const currentUsers = mergeSavedActivity(collectVisibleUsers());
@@ -185,11 +183,8 @@ export function App() {
         progress: 100,
         users: finalUsers,
       });
-      
-      console.log('%c[IAmNotYourFan] Real scan finished. Users found:', 'color:#62d6d0', finalUsers.length);
-    } catch (err) {
-      console.error('[IAmNotYourFan] Real scan failed:', err);
-      alert('Scanning ran into an error. Check the console for details. You can try the test snippet from TESTING_REAL_PROFILE.md as a fallback.');
+    } catch {
+      alert('Scanning ran into an error. Please refresh the Following page and try again.');
     }
   };
 
@@ -221,8 +216,8 @@ export function App() {
           users: Array.from(existing.values()) as XUser[],
         };
       });
-    } catch (err) {
-      console.error('[IAmNotYourFan] Background collection failed:', err);
+    } catch {
+      // Ignore background collection failures; the dashboard keeps the users already collected.
     }
   };
 

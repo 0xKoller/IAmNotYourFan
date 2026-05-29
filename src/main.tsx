@@ -25,7 +25,6 @@ if (isConsoleMode) {
     // 3. Scroll the original X page aggressively in the background
     // 4. When done (or user stops), do full clean takeover with all data
 
-    console.log('%c[IAmNotYourFan] Real X + Following page detected — using loader + background collection mode', 'color:#e0a33a');
     (window as any).__IAMNOTYOURFAN_CURRENT_ACCOUNT = getCurrentAccount();
 
     // Create simple full-screen loader
@@ -126,8 +125,7 @@ if (isConsoleMode) {
         if (!isDone) {
           finishAndTakeover();
         }
-      } catch (err) {
-        console.error('[IAmNotYourFan] Collection error', err);
+      } catch {
         if (!isDone) finishAndTakeover();
       }
     };
@@ -138,7 +136,6 @@ if (isConsoleMode) {
 
       const finalUsers = Array.from(collected.values());
       const currentAccount = (window as any).__IAMNOTYOURFAN_CURRENT_ACCOUNT || getCurrentAccount();
-      console.log(`[IAmNotYourFan] Collection finished. Total users: ${finalUsers.length}`);
 
       // Remove loader
       loader.remove();
@@ -168,8 +165,6 @@ if (isConsoleMode) {
       finishAndTakeover();
     };
 
-    // Start collection
-    console.log('[IAmNotYourFan] Starting background collection on original X page...');
     startCollection();
 
   } else {
